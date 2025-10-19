@@ -133,7 +133,7 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-4 w-4" />
                     Canvas
                   </a>
                 </Badge>
@@ -207,7 +207,7 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
               {task.canvas_url && (
                 <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/5 font-normal" asChild>
                   <a href={task.canvas_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-4 w-4" />
                     View in Canvas
                   </a>
                 </Badge>
@@ -258,7 +258,6 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
         workstreams={workstreams}
         onTaskCreated={() => setShowEditDialog(false)}
         editTask={task}
-        mode="edit"
       />
     </>
   )

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Plus } from "lucide-react"
 
 interface TaskDialogProps {
   open: boolean
@@ -42,17 +43,24 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("none")
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [dueDate, setDueDate] = useState("")
+  const [showNewProject, setShowNewProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState("")
+
   const addTask = useAppStore((state) => state.addTask)
   const updateTask = useAppStore((state) => state.updateTask)
+  const addProject = useAppStore((state) => state.addProject)
   const allProjects = useAppStore((state) => state.projects)
+
   const projects = useMemo(
     () => allProjects.filter((p) => p.workstream_id === workstreamId),
     [allProjects, workstreamId],
   )
 
+  const isEditMode = mode === "edit" || !!editTask
+
   useEffect(() => {
     if (open) {
-      if (mode === "edit" && editTask) {
+      if (isEditMode && editTask) {
         setTitle(editTask.title)
         setDescription(editTask.description || "")
         setWorkstreamId(editTask.workstream_id)
@@ -77,13 +85,35 @@ export function TaskDialog({
           setDueDate("")
         }
       }
+      setShowNewProject(false)
+      setNewProjectName("")
     }
-  }, [open, mode, editTask, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
+  }, [open, isEditMode, editTask, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
+
+  useEffect(() => {
+    if (workstreamId && !isEditMode) {
+      setProjectId("none")
+    }
+  }, [workstreamId, isEditMode])
+
+  const handleCreateProject = () => {
+    if (newProjectName.trim() && workstreamId) {
+      const newProject = addProject({
+        user_id: "grace",
+        workstream_id: workstreamId,
+        name: newProjectName.trim(),
+        status: "active",
+      })
+      setProjectId(newProject.id)
+      setShowNewProject(false)
+      setNewProjectName("")
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (mode === "edit" && editTask) {
+    if (isEditMode && editTask) {
       updateTask(editTask.id, {
         title,
         description,
@@ -119,9 +149,11 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="font-light text-2xl">{mode === "edit" ? "Edit Task" : "Create New Task"}</DialogTitle>
+          <DialogTitle className="font-light text-2xl">{isEditMode ? "Edit Task" : "Create New Task"}</DialogTitle>
           <DialogDescription>
-            {mode === "edit" ? "Update task details" : "Add a new task to your workstream"}
+            {isEditMode
+              ? "Update task details including workstream, project, and priority"
+              : "Add a new task to your workstream"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,22 +207,58 @@ export function TaskDialog({
               </Select>
             </div>
           </div>
-          {workstreamId && projects.length > 0 && (
+          {workstreamId && (
             <div className="space-y-2">
-              <Label htmlFor="project">Project (Optional)</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger id="project">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="project">Project (Optional)</Label>
+                {!showNewProject && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-primary hover:text-primary/80"
+                    onClick={() => setShowNewProject(true)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    New Project
+                  </Button>
+                )}
+              </div>
+              {showNewProject ? (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Project name..."
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        handleCreateProject()
+                      }
+                    }}
+                  />
+                  <Button type="button" size="sm" onClick={handleCreateProject}>
+                    Add
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setShowNewProject(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select value={projectId} onValueChange={setProjectId}>
+                  <SelectTrigger id="project">
+                    <SelectValue placeholder={projects.length === 0 ? "No projects yet" : "Select project"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
           <div className="space-y-2">
@@ -201,7 +269,7 @@ export function TaskDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{mode === "edit" ? "Update Task" : "Create Task"}</Button>
+            <Button type="submit">{isEditMode ? "Update Task" : "Create Task"}</Button>
           </div>
         </form>
       </DialogContent>
