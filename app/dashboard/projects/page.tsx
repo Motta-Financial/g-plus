@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Project } from "@/lib/types"
 import { format } from "date-fns"
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 
 export default function ProjectsPage() {
   const projects = useAppStore((state) => state.projects)
@@ -93,13 +94,13 @@ export default function ProjectsPage() {
   const archivedProjects = projects.filter((p) => p.status === "archived")
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] p-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <DashboardLayout>
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-light tracking-[0.2em] text-white">Projects</h1>
-            <p className="mt-2 text-sm font-light text-gray-400">Organize your tasks into projects</p>
+            <h1 className="text-4xl font-light tracking-[0.2em] text-foreground">Projects</h1>
+            <p className="mt-2 text-sm font-light text-muted-foreground">Organize your tasks into projects</p>
           </div>
           <Button onClick={() => handleOpenDialog()} className="gap-2">
             <Plus className="h-4 w-4" />
@@ -110,7 +111,7 @@ export default function ProjectsPage() {
         {/* Active Projects */}
         {activeProjects.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-light tracking-wide text-white">Active Projects</h2>
+            <h2 className="text-xl font-light tracking-wide text-foreground">Active Projects</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {activeProjects.map((project) => {
                 const workstream = workstreams.find((w) => w.id === project.workstream_id)
@@ -131,7 +132,7 @@ export default function ProjectsPage() {
                               boxShadow: `0 0 12px ${project.color || workstream?.color}60`,
                             }}
                           />
-                          <CardTitle className="font-light text-lg text-white">{project.name}</CardTitle>
+                          <CardTitle className="font-light text-lg text-foreground">{project.name}</CardTitle>
                         </div>
                       </div>
                       {workstream && (
@@ -140,15 +141,17 @@ export default function ProjectsPage() {
                         </Badge>
                       )}
                       {project.description && (
-                        <CardDescription className="text-gray-400 font-light">{project.description}</CardDescription>
+                        <CardDescription className="text-muted-foreground font-light">
+                          {project.description}
+                        </CardDescription>
                       )}
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Progress */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400 font-light">Progress</span>
-                          <span className="text-white font-light">
+                          <span className="text-muted-foreground font-light">Progress</span>
+                          <span className="text-foreground font-light">
                             {stats.completed}/{stats.total} tasks
                           </span>
                         </div>
@@ -162,7 +165,7 @@ export default function ProjectsPage() {
 
                       {/* Due Date */}
                       {project.due_date && (
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span className="font-light">Due {format(new Date(project.due_date), "MMM d, yyyy")}</span>
                         </div>
@@ -178,7 +181,7 @@ export default function ProjectsPage() {
         {/* Completed Projects */}
         {completedProjects.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-light tracking-wide text-white">Completed Projects</h2>
+            <h2 className="text-xl font-light tracking-wide text-foreground">Completed Projects</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {completedProjects.map((project) => {
                 const workstream = workstreams.find((w) => w.id === project.workstream_id)
@@ -193,7 +196,7 @@ export default function ProjectsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          <CardTitle className="font-light text-lg text-white">{project.name}</CardTitle>
+                          <CardTitle className="font-light text-lg text-foreground">{project.name}</CardTitle>
                         </div>
                       </div>
                       {workstream && (
@@ -203,7 +206,7 @@ export default function ProjectsPage() {
                       )}
                     </CardHeader>
                     <CardContent>
-                      <div className="text-sm text-gray-400 font-light">{stats.total} tasks completed</div>
+                      <div className="text-sm text-muted-foreground font-light">{stats.total} tasks completed</div>
                     </CardContent>
                   </Card>
                 )
@@ -217,8 +220,8 @@ export default function ProjectsPage() {
           <Card className="glass-effect border-white/10">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <FolderKanban className="h-16 w-16 text-gray-600 mb-4" />
-              <h3 className="text-xl font-light text-white mb-2">No projects yet</h3>
-              <p className="text-gray-400 font-light mb-6">Create your first project to organize your tasks</p>
+              <h3 className="text-xl font-light text-foreground mb-2">No projects yet</h3>
+              <p className="text-muted-foreground font-light mb-6">Create your first project to organize your tasks</p>
               <Button onClick={() => handleOpenDialog()} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create Project
@@ -340,6 +343,6 @@ export default function ProjectsPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   )
 }
