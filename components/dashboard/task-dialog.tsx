@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import type { Workstream, TaskPriority } from "@/lib/types"
+import type { Task, Workstream, TaskPriority } from "@/lib/types"
 import { useAppStore } from "@/lib/store"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,8 @@ interface TaskDialogProps {
   defaultTitle?: string
   defaultDescription?: string
   defaultDueDate?: string
+  editTask?: Task
+  mode?: "create" | "edit"
 }
 
 export function TaskDialog({
@@ -31,6 +33,8 @@ export function TaskDialog({
   defaultTitle,
   defaultDescription,
   defaultDueDate,
+  editTask,
+  mode = "create",
 }: TaskDialogProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -39,6 +43,7 @@ export function TaskDialog({
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [dueDate, setDueDate] = useState("")
   const addTask = useAppStore((state) => state.addTask)
+  const updateTask = useAppStore((state) => state.updateTask)
   const allProjects = useAppStore((state) => state.projects)
   const projects = useMemo(
     () => allProjects.filter((p) => p.workstream_id === workstreamId),
@@ -47,31 +52,59 @@ export function TaskDialog({
 
   useEffect(() => {
     if (open) {
-      setTitle(defaultTitle || "")
-      setDescription(defaultDescription || "")
-      setWorkstreamId(defaultWorkstreamId || "")
-      setProjectId("none")
-      if (defaultDueDate) {
-        const date = new Date(defaultDueDate)
-        setDueDate(date.toISOString().split("T")[0])
+      if (mode === "edit" && editTask) {
+        setTitle(editTask.title)
+        setDescription(editTask.description || "")
+        setWorkstreamId(editTask.workstream_id)
+        setProjectId(editTask.project_id || "none")
+        setPriority(editTask.priority)
+        if (editTask.due_date) {
+          const date = new Date(editTask.due_date)
+          setDueDate(date.toISOString().split("T")[0])
+        } else {
+          setDueDate("")
+        }
+      } else {
+        setTitle(defaultTitle || "")
+        setDescription(defaultDescription || "")
+        setWorkstreamId(defaultWorkstreamId || "")
+        setProjectId("none")
+        setPriority("small_rock")
+        if (defaultDueDate) {
+          const date = new Date(defaultDueDate)
+          setDueDate(date.toISOString().split("T")[0])
+        } else {
+          setDueDate("")
+        }
       }
     }
-  }, [open, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
+  }, [open, mode, editTask, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    addTask({
-      user_id: "grace",
-      title,
-      description,
-      workstream_id: workstreamId,
-      project_id: projectId === "none" ? undefined : projectId,
-      priority,
-      due_date: dueDate || undefined,
-      status: "todo",
-      order_index: 0,
-    })
+    if (mode === "edit" && editTask) {
+      updateTask(editTask.id, {
+        title,
+        description,
+        workstream_id: workstreamId,
+        project_id: projectId === "none" ? undefined : projectId,
+        priority,
+        due_date: dueDate || undefined,
+      })
+    } else {
+      addTask({
+        user_id: "grace",
+        title,
+        description,
+        workstream_id: workstreamId,
+        project_id: projectId === "none" ? undefined : projectId,
+        priority,
+        due_date: dueDate || undefined,
+        status: "todo",
+        order_index: 0,
+      })
+    }
 
     onTaskCreated()
     setTitle("")
@@ -86,8 +119,10 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="font-light text-2xl">Create New Task</DialogTitle>
-          <DialogDescription>Add a new task to your workstream</DialogDescription>
+          <DialogTitle className="font-light text-2xl">{mode === "edit" ? "Edit Task" : "Create New Task"}</DialogTitle>
+          <DialogDescription>
+            {mode === "edit" ? "Update task details" : "Add a new task to your workstream"}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
@@ -166,7 +201,7 @@ export function TaskDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create Task</Button>
+            <Button type="submit">{mode === "edit" ? "Update Task" : "Create Task"}</Button>
           </div>
         </form>
       </DialogContent>

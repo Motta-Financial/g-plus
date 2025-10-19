@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, Calendar, ExternalLink, MessageSquare, Send } from "lucide-react"
+import { GripVertical, Calendar, ExternalLink, MessageSquare, Send, FolderKanban, Pencil } from "lucide-react"
 import { format } from "date-fns"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { TaskDialog } from "./task-dialog"
 
 interface TaskCardProps {
   task: Task
@@ -23,9 +24,16 @@ interface TaskCardProps {
 export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCardProps) {
   const [isCompleted, setIsCompleted] = useState(task.status === "completed")
   const [showComments, setShowComments] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [newComment, setNewComment] = useState("")
   const updateTask = useAppStore((state) => state.updateTask)
   const addTaskComment = useAppStore((state) => state.addTaskComment)
+  const allProjects = useAppStore((state) => state.projects)
+
+  const project = useMemo(() => {
+    if (!task.project_id) return null
+    return allProjects.find((p) => p.id === task.project_id) || task.project
+  }, [task.project_id, task.project, allProjects])
 
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: task.id,
@@ -55,9 +63,9 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
   }
 
   const priorityColors = {
-    big_rock: "bg-red-500/10 text-red-400 border-red-500/20",
-    medium_rock: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    small_rock: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    big_rock: "bg-red-500/10 text-red-600 border-red-500/20",
+    medium_rock: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    small_rock: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   }
 
   return (
@@ -65,17 +73,17 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
       <Card
         ref={setNodeRef}
         style={style}
-        className={`p-4 cursor-pointer fashion-card hover:border-primary/30 transition-all ${isCompleted ? "opacity-60" : ""}`}
+        className={`p-4 cursor-pointer fashion-card hover:border-primary/40 transition-all ${isCompleted ? "opacity-50" : ""}`}
         onClick={() => setShowComments(true)}
       >
         <div className="flex items-start gap-3">
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing mt-1"
+            className="cursor-grab active:cursor-grabbing mt-1 text-muted-foreground hover:text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
+            <GripVertical className="h-4 w-4" />
           </button>
           <Checkbox
             checked={isCompleted}
@@ -85,7 +93,7 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
           />
           <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className={`font-light tracking-wide ${isCompleted ? "line-through" : ""}`}>{task.title}</h3>
+              <h3 className={`font-medium tracking-tight ${isCompleted ? "line-through" : ""}`}>{task.title}</h3>
               <Badge variant="outline" className={priorityColors[task.priority]}>
                 {task.priority.replace("_", " ")}
               </Badge>
@@ -95,19 +103,30 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
               {workstream && (
                 <Badge
                   variant="secondary"
-                  style={{ backgroundColor: `${workstream.color}20`, color: workstream.color }}
+                  className="font-normal"
+                  style={{
+                    backgroundColor: `${workstream.color}15`,
+                    color: workstream.color,
+                    borderColor: `${workstream.color}30`,
+                  }}
                 >
                   {workstream.icon} {workstream.name}
                 </Badge>
               )}
+              {project && (
+                <Badge variant="outline" className="gap-1 font-normal bg-primary/5 text-primary border-primary/20">
+                  <FolderKanban className="h-3 w-3" />
+                  {project.name}
+                </Badge>
+              )}
               {task.due_date && (
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 font-normal">
                   <Calendar className="h-3 w-3" />
                   {format(new Date(task.due_date), "MMM d")}
                 </Badge>
               )}
               {task.canvas_url && (
-                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-cyan-500/10" asChild>
+                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/5 font-normal" asChild>
                   <a
                     href={task.canvas_url}
                     target="_blank"
@@ -120,7 +139,7 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                 </Badge>
               )}
               {task.comments && task.comments.length > 0 && (
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 font-normal">
                   <MessageSquare className="h-3 w-3" />
                   {task.comments.length}
                 </Badge>
@@ -133,8 +152,25 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
       <Dialog open={showComments} onOpenChange={setShowComments}>
         <DialogContent className="sm:max-w-[600px] fashion-card">
           <DialogHeader>
-            <DialogTitle className="font-light text-2xl tracking-wide">{task.title}</DialogTitle>
-            <DialogDescription className="text-muted-foreground">{task.description}</DialogDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <DialogTitle className="font-semibold text-2xl tracking-tight">{task.title}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">{task.description}</DialogDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-transparent"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowComments(false)
+                  setShowEditDialog(true)
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -143,22 +179,33 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
               {workstream && (
                 <Badge
                   variant="secondary"
-                  style={{ backgroundColor: `${workstream.color}20`, color: workstream.color }}
+                  className="font-normal"
+                  style={{
+                    backgroundColor: `${workstream.color}15`,
+                    color: workstream.color,
+                    borderColor: `${workstream.color}30`,
+                  }}
                 >
                   {workstream.icon} {workstream.name}
+                </Badge>
+              )}
+              {project && (
+                <Badge variant="outline" className="gap-1 font-normal bg-primary/5 text-primary border-primary/20">
+                  <FolderKanban className="h-3 w-3" />
+                  {project.name}
                 </Badge>
               )}
               <Badge variant="outline" className={priorityColors[task.priority]}>
                 {task.priority.replace("_", " ")}
               </Badge>
               {task.due_date && (
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="outline" className="gap-1 font-normal">
                   <Calendar className="h-3 w-3" />
                   {format(new Date(task.due_date), "MMM d, yyyy")}
                 </Badge>
               )}
               {task.canvas_url && (
-                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-cyan-500/10" asChild>
+                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/5 font-normal" asChild>
                   <a href={task.canvas_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3" />
                     View in Canvas
@@ -169,7 +216,7 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
 
             {/* Comments Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-light tracking-wide uppercase text-muted-foreground">Comments & Notes</h3>
+              <h3 className="text-sm font-medium tracking-tight uppercase text-muted-foreground">Comments & Notes</h3>
 
               {/* Existing Comments */}
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
@@ -204,6 +251,15 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
           </div>
         </DialogContent>
       </Dialog>
+
+      <TaskDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        workstreams={workstreams}
+        onTaskCreated={() => setShowEditDialog(false)}
+        editTask={task}
+        mode="edit"
+      />
     </>
   )
 }
