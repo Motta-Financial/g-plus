@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { CanvasSyncButton } from "@/components/canvas/canvas-sync-button"
 import { WorkstreamManager } from "./workstream-manager"
+import { CalendarConnections } from "./calendar-connections"
 import { Palette, Settings2, Workflow } from "lucide-react"
 
 interface SettingsClientProps {
@@ -25,7 +26,6 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   const [primaryColor, setPrimaryColor] = useState(initialSettings?.primaryColor || "#6366f1")
   const [secondaryColor, setSecondaryColor] = useState(initialSettings?.secondaryColor || "#8b5cf6")
   const [accentColor, setAccentColor] = useState(initialSettings?.accentColor || "#ec4899")
-  const [aiAssistantName, setAiAssistantName] = useState(initialSettings?.aiAssistantName || "Mermaid")
   const [saving, setSaving] = useState(false)
   const updateSettings = useAppStore((state) => state.updateSettings)
   const { toast } = useToast()
@@ -61,7 +61,6 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
         primaryColor,
         secondaryColor,
         accentColor,
-        aiAssistantName,
       })
 
       if (theme === "dark") {
@@ -157,41 +156,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Calendar Integrations</CardTitle>
-                <CardDescription>Connect your calendars to see all your events in one place</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Google Calendar</p>
-                    <p className="text-sm text-muted-foreground">Sync events from Google Calendar</p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    Coming Soon
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Outlook Calendar</p>
-                    <p className="text-sm text-muted-foreground">Sync events from Outlook Calendar</p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    Coming Soon
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Apple Calendar</p>
-                    <p className="text-sm text-muted-foreground">Sync events from Apple Calendar</p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    Coming Soon
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CalendarConnections />
           </TabsContent>
 
           <TabsContent value="appearance" className="space-y-6">
@@ -289,25 +254,6 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       <Input value={accentColor} onChange={(e) => setAccentColor(e.target.value)} />
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Assistant</CardTitle>
-                <CardDescription>Customize your AI assistant</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ai_assistant_name">Assistant Name</Label>
-                  <Input
-                    id="ai_assistant_name"
-                    value={aiAssistantName}
-                    onChange={(e) => setAiAssistantName(e.target.value)}
-                    placeholder="Mermaid"
-                  />
-                  <p className="text-xs text-muted-foreground">Give your AI assistant a custom name</p>
                 </div>
               </CardContent>
             </Card>

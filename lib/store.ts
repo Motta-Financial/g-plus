@@ -1,19 +1,33 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { Workstream, Task, CalendarEvent } from "./types"
+import type {
+  Workstream,
+  Task,
+  CalendarEvent,
+  CanvasCourse,
+  TriageItem,
+  TaskPriority,
+  CalendarConnection,
+} from "./types"
 
 interface AppState {
   workstreams: Workstream[]
   tasks: Task[]
   events: CalendarEvent[]
+  courses: CanvasCourse[]
+  triageItems: TriageItem[]
+  calendarConnections: CalendarConnection[]
   settings: {
     theme: "light" | "dark" | "auto"
     primaryColor: string
     secondaryColor: string
     accentColor: string
-    aiAssistantName: string
     canvasApiToken?: string
     canvasBaseUrl?: string
+    googleCalendarClientId?: string
+    googleCalendarClientSecret?: string
+    outlookClientId?: string
+    outlookClientSecret?: string
   }
   addWorkstream: (workstream: Omit<Workstream, "id" | "created_at" | "updated_at">) => void
   updateWorkstream: (id: string, updates: Partial<Workstream>) => void
@@ -21,8 +35,19 @@ interface AppState {
   addTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => void
   updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
+  addTaskComment: (taskId: string, content: string) => void
   addEvent: (event: Omit<CalendarEvent, "id" | "created_at" | "updated_at">) => void
   updateSettings: (settings: Partial<AppState["settings"]>) => void
+  setCourses: (courses: CanvasCourse[]) => void
+  addTriageItem: (item: Omit<TriageItem, "id" | "created_at" | "updated_at">) => void
+  updateTriageItem: (id: string, updates: Partial<TriageItem>) => void
+  deleteTriageItem: (id: string) => void
+  setTriageItems: (items: TriageItem[]) => void
+  processTriageItem: (triageItemId: string, priority: TaskPriority) => void
+  addCalendarConnection: (connection: Omit<CalendarConnection, "id" | "created_at" | "updated_at">) => void
+  updateCalendarConnection: (id: string, updates: Partial<CalendarConnection>) => void
+  deleteCalendarConnection: (id: string) => void
+  setCalendarConnections: (connections: CalendarConnection[]) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -88,6 +113,7 @@ export const useAppStore = create<AppState>()(
           order_index: 0,
           canvas_assignment_id: "14239",
           canvas_course_id: "ISOM-230",
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -103,6 +129,7 @@ export const useAppStore = create<AppState>()(
           order_index: 1,
           canvas_assignment_id: "14519",
           canvas_course_id: "ISOM-230",
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -118,6 +145,7 @@ export const useAppStore = create<AppState>()(
           order_index: 2,
           canvas_assignment_id: "14845",
           canvas_course_id: "ISOM-230",
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -133,6 +161,7 @@ export const useAppStore = create<AppState>()(
           order_index: 3,
           canvas_assignment_id: "14880",
           canvas_course_id: "ISOM-230",
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -147,6 +176,7 @@ export const useAppStore = create<AppState>()(
           priority: "big_rock",
           due_date: "2025-10-06T00:00:00.000Z",
           order_index: 4,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -158,7 +188,9 @@ export const useAppStore = create<AppState>()(
           description: "$1500!!",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 5,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -172,6 +204,7 @@ export const useAppStore = create<AppState>()(
           priority: "small_rock",
           due_date: "2025-10-08T00:00:00.000Z",
           order_index: 6,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -185,6 +218,7 @@ export const useAppStore = create<AppState>()(
           priority: "small_rock",
           due_date: "2025-10-08T00:00:00.000Z",
           order_index: 7,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -196,7 +230,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "completed",
           priority: "small_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 8,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -208,7 +244,9 @@ export const useAppStore = create<AppState>()(
           description: "Rollforward 2023 return, input new info",
           status: "completed",
           priority: "medium_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 9,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -220,7 +258,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "completed",
           priority: "medium_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 10,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -234,6 +274,7 @@ export const useAppStore = create<AppState>()(
           priority: "small_rock",
           due_date: "2025-10-08T00:00:00.000Z",
           order_index: 11,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -245,7 +286,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "completed",
           priority: "medium_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 12,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -257,7 +300,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "todo",
           priority: "medium_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 13,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -269,7 +314,9 @@ export const useAppStore = create<AppState>()(
           description: "- done with photography, need to schedule time with caroline",
           status: "completed",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 14,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -281,7 +328,9 @@ export const useAppStore = create<AppState>()(
           description: "schedule time with caroline",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 15,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -293,7 +342,9 @@ export const useAppStore = create<AppState>()(
           description: "$1,500 on the line.",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 16,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -305,7 +356,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 17,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -317,7 +370,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-08T00:00:00.000Z",
           order_index: 18,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -330,7 +385,9 @@ export const useAppStore = create<AppState>()(
           description: "Sargent",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 19,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -342,7 +399,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "completed",
           priority: "medium_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 20,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -354,7 +413,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "completed",
           priority: "small_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 21,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -367,7 +428,9 @@ export const useAppStore = create<AppState>()(
           description: "1. outline pitch presentation",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 22,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -379,7 +442,9 @@ export const useAppStore = create<AppState>()(
           description: "seed prospect interviews database, Replace MJ",
           status: "todo",
           priority: "big_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 23,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -393,6 +458,7 @@ export const useAppStore = create<AppState>()(
           priority: "medium_rock",
           due_date: "2025-10-06T00:00:00.000Z",
           order_index: 24,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -406,6 +472,7 @@ export const useAppStore = create<AppState>()(
           priority: "medium_rock",
           due_date: "2025-10-13T00:00:00.000Z",
           order_index: 25,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -417,7 +484,9 @@ export const useAppStore = create<AppState>()(
           description: "",
           status: "in_progress",
           priority: "big_rock",
+          due_date: "2025-10-07T00:00:00.000Z",
           order_index: 26,
+          comments: [],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -473,12 +542,55 @@ export const useAppStore = create<AppState>()(
           updated_at: new Date().toISOString(),
         },
       ],
+      courses: [
+        {
+          id: "14239",
+          name: "Information Systems Management",
+          course_code: "ISOM-230",
+          enrollment_state: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "14519",
+          name: "Small Business Strategy",
+          course_code: "SBS-400",
+          enrollment_state: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "14845",
+          name: "Business Law & Ethics",
+          course_code: "BLE-214",
+          enrollment_state: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "14880",
+          name: "Intermediate Accounting I",
+          course_code: "ACCT-431",
+          enrollment_state: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "14890",
+          name: "Cost Accounting",
+          course_code: "ACCT-320",
+          enrollment_state: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+      triageItems: [],
+      calendarConnections: [],
       settings: {
         theme: "light",
         primaryColor: "#6366f1",
         secondaryColor: "#8b5cf6",
         accentColor: "#ec4899",
-        aiAssistantName: "Mermaid",
         canvasBaseUrl: "https://canvas.suffolk.edu",
       },
       addWorkstream: (workstream) =>
@@ -511,6 +623,7 @@ export const useAppStore = create<AppState>()(
             {
               ...task,
               id: Math.random().toString(36).substr(2, 9),
+              comments: [],
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             },
@@ -523,6 +636,28 @@ export const useAppStore = create<AppState>()(
       deleteTask: (id) =>
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== id),
+        })),
+      addTaskComment: (taskId, content) =>
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  comments: [
+                    ...(t.comments || []),
+                    {
+                      id: Math.random().toString(36).substr(2, 9),
+                      task_id: taskId,
+                      user_id: "grace",
+                      content,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    },
+                  ],
+                  updated_at: new Date().toISOString(),
+                }
+              : t,
+          ),
         })),
       addEvent: (event) =>
         set((state) => ({
@@ -539,6 +674,97 @@ export const useAppStore = create<AppState>()(
       updateSettings: (settings) =>
         set((state) => ({
           settings: { ...state.settings, ...settings },
+        })),
+      setCourses: (courses) =>
+        set(() => ({
+          courses,
+        })),
+      addTriageItem: (item) =>
+        set((state) => ({
+          triageItems: [
+            ...state.triageItems,
+            {
+              ...item,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateTriageItem: (id, updates) =>
+        set((state) => ({
+          triageItems: state.triageItems.map((item) =>
+            item.id === id ? { ...item, ...updates, updated_at: new Date().toISOString() } : item,
+          ),
+        })),
+      deleteTriageItem: (id) =>
+        set((state) => ({
+          triageItems: state.triageItems.filter((item) => item.id !== id),
+        })),
+      setTriageItems: (items) =>
+        set(() => ({
+          triageItems: items,
+        })),
+      processTriageItem: (triageItemId, priority) =>
+        set((state) => {
+          const triageItem = state.triageItems.find((item) => item.id === triageItemId)
+          if (!triageItem) return state
+
+          const suffolkWorkstream = state.workstreams.find((ws) => ws.type === "school")
+          if (!suffolkWorkstream) return state
+
+          const newTask: Task = {
+            id: Math.random().toString(36).substr(2, 9),
+            user_id: "grace",
+            workstream_id: suffolkWorkstream.id,
+            title: triageItem.title,
+            description: triageItem.description,
+            priority,
+            status: "todo",
+            due_date: triageItem.due_date,
+            canvas_assignment_id: triageItem.canvas_id,
+            canvas_course_id: triageItem.course_id,
+            canvas_url: triageItem.canvas_url,
+            order_index: state.tasks.length,
+            comments: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+
+          return {
+            tasks: [...state.tasks, newTask],
+            triageItems: state.triageItems.map((item) =>
+              item.id === triageItemId
+                ? { ...item, status: "processed" as const, updated_at: new Date().toISOString() }
+                : item,
+            ),
+          }
+        }),
+      addCalendarConnection: (connection) =>
+        set((state) => ({
+          calendarConnections: [
+            ...state.calendarConnections,
+            {
+              ...connection,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateCalendarConnection: (id, updates) =>
+        set((state) => ({
+          calendarConnections: state.calendarConnections.map((conn) =>
+            conn.id === id ? { ...conn, ...updates, updated_at: new Date().toISOString() } : conn,
+          ),
+        })),
+      deleteCalendarConnection: (id) =>
+        set((state) => ({
+          calendarConnections: state.calendarConnections.filter((conn) => conn.id !== id),
+        })),
+      setCalendarConnections: (connections) =>
+        set(() => ({
+          calendarConnections: connections,
         })),
     }),
     {

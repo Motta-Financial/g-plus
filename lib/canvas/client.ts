@@ -69,6 +69,33 @@ export class CanvasClient {
     return allAssignments.sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())
   }
 
+  async getAnnouncements(courseId: string) {
+    return this.fetch(`/courses/${courseId}/discussion_topics?only_announcements=true&per_page=100`)
+  }
+
+  async getAllAnnouncements() {
+    const courses = await this.getCourses()
+    const allAnnouncements = []
+
+    for (const course of courses) {
+      try {
+        const announcements = await this.getAnnouncements(course.id)
+        allAnnouncements.push(
+          ...announcements.map((announcement: any) => ({
+            ...announcement,
+            course_id: course.id,
+            course_name: course.name,
+            course_code: course.course_code,
+          })),
+        )
+      } catch (error) {
+        console.error(`Error fetching announcements for course ${course.id}:`, error)
+      }
+    }
+
+    return allAnnouncements.sort((a: any, b: any) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime())
+  }
+
   async getCalendarEvents(startDate?: Date, endDate?: Date) {
     const start = startDate || new Date()
     const end = endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now

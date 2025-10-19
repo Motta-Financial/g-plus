@@ -14,37 +14,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Settings, Sparkles, LayoutDashboard, CheckSquare } from "lucide-react"
+import { Calendar, Settings, LayoutDashboard, CheckSquare, Bell } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 export function AppSidebar() {
   const pathname = usePathname()
   const workstreams = useAppStore((state) => state.workstreams)
+  const pendingTriageCount = useAppStore(
+    (state) => state.triageItems.filter((item) => item.status === "pending").length,
+  )
 
   const mainNavItems = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/todo", label: "To Do List", icon: CheckSquare },
+    { href: "/dashboard/triage", label: "Triage", icon: Bell, badge: pendingTriageCount },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
-    { href: "/dashboard/assistant", label: "Assistant", icon: Sparkles },
   ]
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-sidebar/80 backdrop-blur-xl">
-      <div className="border-b border-sidebar-border/50 px-6 py-6">
+    <div className="flex h-screen w-64 flex-col border-r border-white/5 bg-[#0a0a0c]">
+      <div className="border-b border-white/5 px-6 py-8">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg glow-effect">
-            <span className="text-lg font-light text-primary-foreground">G</span>
-          </div>
+          <Avatar className="h-10 w-10 border border-white/10">
+            <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-light">
+              GC
+            </AvatarFallback>
+          </Avatar>
           <div>
-            <h1 className="text-lg font-light tracking-widest text-sidebar-foreground">GRACE</h1>
-            <p className="text-xs tracking-wide text-muted-foreground">PROJECT MANAGER</p>
+            <h1 className="text-xl font-light tracking-[0.2em] text-white">Dashboard</h1>
           </div>
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <nav className="space-y-8">
-          <div className="space-y-1">
-            <p className="px-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">NAVIGATION</p>
+      <div className="flex-1 overflow-y-auto px-3 py-6">
+        <nav className="space-y-6">
+          <div className="space-y-0.5">
             {mainNavItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -53,21 +57,28 @@ export function AppSidebar() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-3 font-light tracking-wide transition-all hover:bg-sidebar-accent/50",
-                      isActive &&
-                        "bg-gradient-to-r from-primary/20 to-accent/20 text-sidebar-accent-foreground shadow-md",
+                      "w-full justify-start gap-3 h-11 font-light tracking-wide text-gray-400 hover:text-white hover:bg-white/5",
+                      isActive && "bg-white/8 text-white",
                     )}
                   >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
+                    <Icon className="h-5 w-5" />
+                    <span className="flex-1 text-left text-sm">{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 min-w-5 px-1.5 text-xs bg-pink-500/20 text-pink-400 border-pink-500/30 font-light"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
               )
             })}
           </div>
 
-          <div className="space-y-1">
-            <p className="px-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">WORKSTREAMS</p>
+          <div className="space-y-0.5 pt-4 border-t border-white/5">
+            <p className="px-3 pb-2 text-xs font-light uppercase tracking-[0.15em] text-gray-500">Workstreams</p>
             {workstreams.map((workstream) => {
               const href = `/dashboard/workstream/${workstream.id}`
               const isActive = pathname === href
@@ -76,20 +87,18 @@ export function AppSidebar() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-3 font-light tracking-wide transition-all hover:bg-sidebar-accent/50",
-                      isActive &&
-                        "bg-gradient-to-r from-primary/20 to-accent/20 text-sidebar-accent-foreground shadow-md",
+                      "w-full justify-start gap-3 h-11 font-light tracking-wide text-gray-400 hover:text-white hover:bg-white/5",
+                      isActive && "bg-white/8 text-white",
                     )}
                   >
                     <div
-                      className="h-2 w-2 rounded-full shadow-lg"
+                      className="h-2 w-2 rounded-full"
                       style={{
                         backgroundColor: workstream.color,
-                        boxShadow: `0 0 10px ${workstream.color}80`,
+                        boxShadow: `0 0 8px ${workstream.color}60`,
                       }}
                     />
-                    <span className="flex-1 text-left">{workstream.name}</span>
-                    <span className="text-xs">{workstream.icon}</span>
+                    <span className="flex-1 text-left text-sm">{workstream.name}</span>
                   </Button>
                 </Link>
               )
@@ -98,26 +107,25 @@ export function AppSidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-sidebar-border/50 p-4">
+      <div className="border-t border-white/5 p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-sidebar-accent/50">
-              <Avatar className="h-8 w-8 shadow-lg glow-effect">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-sm font-light">
+            <Button variant="ghost" className="w-full justify-start gap-3 h-12 hover:bg-white/5">
+              <Avatar className="h-8 w-8 border border-white/10">
+                <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white text-xs font-light">
                   GC
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-left">
-                <p className="text-sm font-light tracking-wide">Grace Cha</p>
-                <p className="text-xs tracking-wide text-muted-foreground">SETTINGS</p>
+                <p className="text-sm font-light text-white">Account</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 glass-effect">
-            <DropdownMenuLabel className="font-light tracking-wide">ACCOUNT</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+          <DropdownMenuContent align="end" className="w-56 glass-effect border-white/10">
+            <DropdownMenuLabel className="font-light tracking-wide text-gray-300">Grace Cha</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-white/10" />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="cursor-pointer font-light tracking-wide">
+              <Link href="/dashboard/settings" className="cursor-pointer font-light tracking-wide text-gray-300">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </Link>

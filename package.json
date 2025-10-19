@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/react": "2.0.76",
     "@dnd-kit/core": "latest",
     "@dnd-kit/sortable": "latest",
     "@dnd-kit/utilities": "latest",
@@ -41,9 +42,9 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@supabase/ssr": "0.7.0",
-    "@supabase/supabase-js": "latest",
+    "@supabase/supabase-js": "2.75.1",
     "@vercel/analytics": "latest",
-    "ai": "latest",
+    "ai": "5.0.76",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -12,6 +12,8 @@ export function CanvasSyncButton() {
   const { toast } = useToast()
   const { mutate } = useSWRConfig()
   const { canvasApiToken, canvasBaseUrl } = useAppStore((state) => state.settings)
+  const setCourses = useAppStore((state) => state.setCourses)
+  const setTriageItems = useAppStore((state) => state.setTriageItems)
 
   const handleSync = async () => {
     if (!canvasApiToken) {
@@ -39,9 +41,26 @@ export function CanvasSyncButton() {
       const data = await response.json()
 
       if (response.ok) {
+        if (data.data?.courses) {
+          setCourses(
+            data.data.courses.map((course: any) => ({
+              id: course.id.toString(),
+              name: course.name,
+              course_code: course.course_code,
+              enrollment_state: course.enrollment_state,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })),
+          )
+        }
+
+        if (data.data?.triageItems) {
+          setTriageItems(data.data.triageItems)
+        }
+
         toast({
           title: "Canvas synced successfully",
-          description: `Synced ${data.data?.courses?.length || 0} courses, ${data.data?.assignments?.length || 0} assignments, and ${data.data?.events?.length || 0} events`,
+          description: `Synced ${data.data?.courses?.length || 0} courses and ${data.data?.triageItems?.length || 0} new items`,
         })
         mutate(() => true)
       } else {

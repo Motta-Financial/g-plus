@@ -2,12 +2,13 @@
 
 import { useAppStore } from "@/lib/store"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { TaskBoard } from "@/components/dashboard/task-board"
 import { TaskDialog } from "@/components/dashboard/task-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { CanvasSyncButton } from "@/components/canvas/canvas-sync-button"
+import { SuffolkClassSections } from "@/components/suffolk/suffolk-class-sections"
+import { TaskBoard } from "@/components/dashboard/task-board"
 
 export default function WorkstreamPage({ params }: { params: { id: string } }) {
   const { id } = params
@@ -58,29 +59,34 @@ export default function WorkstreamPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-lg border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Big Rocks</p>
-            <p className="text-3xl font-light mt-2">
-              {workstreamTasks.filter((t) => t.priority === "big_rock").length}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Medium Rocks</p>
-            <p className="text-3xl font-light mt-2">
-              {workstreamTasks.filter((t) => t.priority === "medium_rock").length}
-            </p>
-          </div>
-          <div className="rounded-lg border bg-card p-6">
-            <p className="text-sm text-muted-foreground">Small Rocks</p>
-            <p className="text-3xl font-light mt-2">
-              {workstreamTasks.filter((t) => t.priority === "small_rock").length}
-            </p>
-          </div>
-        </div>
+        {isSchoolWorkstream ? (
+          <SuffolkClassSections />
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-lg border bg-card p-6 luxury-card">
+                <p className="text-sm text-muted-foreground uppercase tracking-wider">Big Rocks</p>
+                <p className="text-3xl font-light mt-2">
+                  {workstreamTasks.filter((t) => t.priority === "big_rock").length}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-card p-6 luxury-card">
+                <p className="text-sm text-muted-foreground uppercase tracking-wider">Medium Rocks</p>
+                <p className="text-3xl font-light mt-2">
+                  {workstreamTasks.filter((t) => t.priority === "medium_rock").length}
+                </p>
+              </div>
+              <div className="rounded-lg border bg-card p-6 luxury-card">
+                <p className="text-sm text-muted-foreground uppercase tracking-wider">Small Rocks</p>
+                <p className="text-3xl font-light mt-2">
+                  {workstreamTasks.filter((t) => t.priority === "small_rock").length}
+                </p>
+              </div>
+            </div>
 
-        {/* Task Board */}
-        <TaskBoard tasks={workstreamTasks} viewMode="priority" workstreams={workstreams} />
+            <TaskBoard tasks={workstreamTasks} viewMode="priority" workstreams={workstreams} />
+          </>
+        )}
 
         {/* Task Dialog */}
         <TaskDialog

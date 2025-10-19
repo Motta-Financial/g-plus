@@ -10,7 +10,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 interface TaskBoardProps {
   tasks: Task[]
   viewMode: "priority" | "project" | "time"
-  onTasksChange: (tasks: Task[]) => void
+  onTasksChange?: (tasks: Task[]) => void
   workstreams: Workstream[]
 }
 
@@ -35,7 +35,7 @@ export function TaskBoard({ tasks, viewMode, onTasksChange, workstreams }: TaskB
     const oldIndex = tasks.findIndex((t) => t.id === active.id)
     const newIndex = tasks.findIndex((t) => t.id === over.id)
 
-    if (oldIndex !== -1 && newIndex !== -1) {
+    if (oldIndex !== -1 && newIndex !== -1 && onTasksChange) {
       const newTasks = [...tasks]
       const [movedTask] = newTasks.splice(oldIndex, 1)
       newTasks.splice(newIndex, 0, movedTask)
@@ -43,29 +43,19 @@ export function TaskBoard({ tasks, viewMode, onTasksChange, workstreams }: TaskB
     }
   }
 
-  if (viewMode === "priority") {
-    const bigRocks = tasks.filter((t) => t.priority === "big_rock" && t.status !== "completed")
-    const mediumRocks = tasks.filter((t) => t.priority === "medium_rock" && t.status !== "completed")
-    const smallRocks = tasks.filter((t) => t.priority === "small_rock" && t.status !== "completed")
-
-    return (
-      <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid gap-6 md:grid-cols-3">
-          <PriorityColumn title="Big Rocks" tasks={bigRocks} color="bg-red-500" workstreams={workstreams} />
-          <PriorityColumn title="Medium Rocks" tasks={mediumRocks} color="bg-amber-500" workstreams={workstreams} />
-          <PriorityColumn title="Small Rocks" tasks={smallRocks} color="bg-emerald-500" workstreams={workstreams} />
-        </div>
-        <DragOverlay>{activeTask ? <TaskCard task={activeTask} isDragging /> : null}</DragOverlay>
-      </DndContext>
-    )
-  }
+  const bigRocks = tasks.filter((t) => t.priority === "big_rock" && t.status !== "completed")
+  const mediumRocks = tasks.filter((t) => t.priority === "medium_rock" && t.status !== "completed")
+  const smallRocks = tasks.filter((t) => t.priority === "small_rock" && t.status !== "completed")
 
   return (
-    <div className="space-y-4">
-      {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
-      ))}
-    </div>
+    <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="grid gap-6 md:grid-cols-3">
+        <PriorityColumn title="Big Rocks" tasks={bigRocks} color="bg-red-500" workstreams={workstreams} />
+        <PriorityColumn title="Medium Rocks" tasks={mediumRocks} color="bg-amber-500" workstreams={workstreams} />
+        <PriorityColumn title="Small Rocks" tasks={smallRocks} color="bg-emerald-500" workstreams={workstreams} />
+      </div>
+      <DragOverlay>{activeTask ? <TaskCard task={activeTask} isDragging /> : null}</DragOverlay>
+    </DndContext>
   )
 }
 
@@ -78,9 +68,9 @@ interface PriorityColumnProps {
 
 function PriorityColumn({ title, tasks, color, workstreams }: PriorityColumnProps) {
   return (
-    <Card>
+    <Card className="luxury-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 font-light text-xl tracking-wide">
           <div className={`h-3 w-3 rounded-full ${color}`} />
           {title}
           <span className="text-sm font-normal text-muted-foreground">({tasks.length})</span>

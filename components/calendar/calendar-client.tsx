@@ -8,6 +8,7 @@ import { UpcomingEvents } from "./upcoming-events"
 import { WorkstreamFilter } from "@/components/dashboard/workstream-filter"
 import { Button } from "@/components/ui/button"
 import { Calendar, List } from "lucide-react"
+import { CalendarSyncButton } from "./calendar-sync-button"
 
 interface CalendarClientProps {
   initialEvents: CalendarEvent[]
@@ -39,6 +40,7 @@ export function CalendarClient({ initialEvents, initialTasks, workstreams }: Cal
             <p className="text-muted-foreground">View all your events and deadlines in one place</p>
           </div>
           <div className="flex gap-2">
+            <CalendarSyncButton />
             <Button
               variant={viewMode === "calendar" ? "default" : "outline"}
               onClick={() => setViewMode("calendar")}

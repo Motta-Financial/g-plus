@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Workstream, TaskPriority } from "@/lib/types"
 import { useAppStore } from "@/lib/store"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -16,16 +16,40 @@ interface TaskDialogProps {
   onOpenChange: (open: boolean) => void
   workstreams: Workstream[]
   onTaskCreated: () => void
-  defaultWorkstreamId?: string // Added default workstream support
+  defaultWorkstreamId?: string
+  defaultTitle?: string
+  defaultDescription?: string
+  defaultDueDate?: string
 }
 
-export function TaskDialog({ open, onOpenChange, workstreams, onTaskCreated, defaultWorkstreamId }: TaskDialogProps) {
+export function TaskDialog({
+  open,
+  onOpenChange,
+  workstreams,
+  onTaskCreated,
+  defaultWorkstreamId,
+  defaultTitle,
+  defaultDescription,
+  defaultDueDate,
+}: TaskDialogProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [workstreamId, setWorkstreamId] = useState(defaultWorkstreamId || "")
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [dueDate, setDueDate] = useState("")
   const addTask = useAppStore((state) => state.addTask)
+
+  useEffect(() => {
+    if (open) {
+      setTitle(defaultTitle || "")
+      setDescription(defaultDescription || "")
+      setWorkstreamId(defaultWorkstreamId || "")
+      if (defaultDueDate) {
+        const date = new Date(defaultDueDate)
+        setDueDate(date.toISOString().split("T")[0])
+      }
+    }
+  }, [open, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +60,7 @@ export function TaskDialog({ open, onOpenChange, workstreams, onTaskCreated, def
       description,
       workstream_id: workstreamId,
       priority,
-      due_date: dueDate || null,
+      due_date: dueDate || undefined,
       status: "todo",
       order_index: 0,
     })

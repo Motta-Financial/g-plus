@@ -20,12 +20,44 @@ export async function POST(request: Request) {
     // Fetch calendar events
     const calendarEvents = await canvas.getCalendarEvents()
 
+    const announcements = await canvas.getAllAnnouncements()
+
+    const triageItems = [
+      ...announcements.map((announcement: any) => ({
+        type: "announcement" as const,
+        canvas_id: announcement.id.toString(),
+        course_id: announcement.context_code?.replace("course_", "") || "",
+        course_code: announcement.course_code,
+        course_name: announcement.course_name,
+        title: announcement.title,
+        description: announcement.message,
+        posted_at: announcement.posted_at,
+        canvas_url: `${canvasBaseUrl}/courses/${announcement.context_code?.replace("course_", "")}/discussion_topics/${announcement.id}`,
+        status: "pending" as const,
+      })),
+      ...assignments.map((assignment: any) => ({
+        type: "assignment" as const,
+        canvas_id: assignment.id.toString(),
+        course_id: assignment.course_id?.toString() || "",
+        course_code: assignment.course_code,
+        course_name: assignment.course_name,
+        title: assignment.name,
+        description: assignment.description,
+        due_date: assignment.due_at,
+        posted_at: assignment.created_at,
+        canvas_url: `${canvasBaseUrl}/courses/${assignment.course_id}/assignments/${assignment.id}`,
+        status: "pending" as const,
+      })),
+    ]
+
     return NextResponse.json({
       success: true,
       data: {
         courses,
         assignments,
         events: calendarEvents,
+        announcements,
+        triageItems,
       },
     })
   } catch (error) {
