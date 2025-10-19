@@ -4,13 +4,19 @@ import { useAppStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Circle, Clock } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { CheckCircle2, Circle, Clock, Pencil } from "lucide-react"
 import { format } from "date-fns"
+import { TaskDialog } from "@/components/dashboard/task-dialog"
+import { useState } from "react"
 
 export function SuffolkClassSections() {
   const courses = useAppStore((state) => state.courses)
   const tasks = useAppStore((state) => state.tasks)
+  const workstreams = useAppStore((state) => state.workstreams)
   const updateTask = useAppStore((state) => state.updateTask)
+
+  const [editingTask, setEditingTask] = useState<string | null>(null)
 
   // Get Suffolk workstream tasks
   const suffolkTasks = tasks.filter((t) => t.workstream_id === "1")
@@ -104,10 +110,9 @@ export function SuffolkClassSections() {
                 .map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-background/50 hover:bg-background/80 transition-colors cursor-pointer group"
-                    onClick={() => handleToggleTask(task.id, task.status)}
+                    className="flex items-start gap-3 p-3 rounded-lg border bg-background/50 hover:bg-background/80 transition-colors group"
                   >
-                    <button className="mt-0.5 flex-shrink-0">
+                    <button className="mt-0.5 flex-shrink-0" onClick={() => handleToggleTask(task.id, task.status)}>
                       {task.status === "completed" ? (
                         <CheckCircle2 className="h-5 w-5 text-cyan-400" />
                       ) : (
@@ -140,6 +145,15 @@ export function SuffolkClassSections() {
                         </div>
                       )}
                     </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setEditingTask(task.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
             </div>
@@ -153,6 +167,16 @@ export function SuffolkClassSections() {
         <Card className="p-12 text-center">
           <p className="text-muted-foreground">No courses found. Sync with Canvas to load your classes.</p>
         </Card>
+      )}
+
+      {editingTask && (
+        <TaskDialog
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+          workstreams={workstreams}
+          onTaskCreated={() => setEditingTask(null)}
+          editingTask={tasks.find((t) => t.id === editingTask)}
+        />
       )}
     </div>
   )

@@ -33,16 +33,16 @@ export function AppSidebar() {
   ]
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r border-white/5 bg-[#0a0a0c]">
-      <div className="border-b border-white/5 px-6 py-8">
+    <div className="flex h-screen w-64 flex-shrink-0 flex-col border-r bg-sidebar">
+      <div className="border-b px-6 py-8">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 border border-white/10">
-            <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white text-sm font-light">
+          <Avatar className="h-10 w-10 border">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-light">
               GC
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-xl font-light tracking-[0.2em] text-white">Dashboard</h1>
+            <h1 className="text-xl font-light tracking-[0.2em]">Dashboard</h1>
           </div>
         </Link>
       </div>
@@ -58,17 +58,14 @@ export function AppSidebar() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-3 h-11 font-light tracking-wide text-gray-400 hover:text-white hover:bg-white/5",
-                      isActive && "bg-white/8 text-white",
+                      "w-full justify-start gap-3 h-11 font-light tracking-wide",
+                      isActive && "bg-accent text-accent-foreground",
                     )}
                   >
                     <Icon className="h-5 w-5" />
                     <span className="flex-1 text-left text-sm">{item.label}</span>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className="h-5 min-w-5 px-1.5 text-xs bg-pink-500/20 text-pink-400 border-pink-500/30 font-light"
-                      >
+                      <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs font-light">
                         {item.badge}
                       </Badge>
                     )}
@@ -78,8 +75,10 @@ export function AppSidebar() {
             })}
           </div>
 
-          <div className="space-y-0.5 pt-4 border-t border-white/5">
-            <p className="px-3 pb-2 text-xs font-light uppercase tracking-[0.15em] text-gray-500">Workstreams</p>
+          <div className="space-y-0.5 pt-4 border-t">
+            <p className="px-3 pb-2 text-xs font-light uppercase tracking-[0.15em] text-muted-foreground">
+              Workstreams
+            </p>
             {workstreams.map((workstream) => {
               const href = `/dashboard/workstream/${workstream.id}`
               const isActive = pathname === href
@@ -88,15 +87,14 @@ export function AppSidebar() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start gap-3 h-11 font-light tracking-wide text-gray-400 hover:text-white hover:bg-white/5",
-                      isActive && "bg-white/8 text-white",
+                      "w-full justify-start gap-3 h-11 font-light tracking-wide",
+                      isActive && "bg-accent text-accent-foreground",
                     )}
                   >
                     <div
                       className="h-2 w-2 rounded-full"
                       style={{
                         backgroundColor: workstream.color,
-                        boxShadow: `0 0 8px ${workstream.color}60`,
                       }}
                     />
                     <span className="flex-1 text-left text-sm">{workstream.name}</span>
@@ -108,25 +106,25 @@ export function AppSidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-white/5 p-3">
+      <div className="border-t p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-3 h-12 hover:bg-white/5">
-              <Avatar className="h-8 w-8 border border-white/10">
-                <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white text-xs font-light">
+            <Button variant="ghost" className="w-full justify-start gap-3 h-12">
+              <Avatar className="h-8 w-8 border">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
                   GC
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start text-left">
-                <p className="text-sm font-light text-white">Account</p>
+                <p className="text-sm font-light">Account</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 glass-effect border-white/10">
-            <DropdownMenuLabel className="font-light tracking-wide text-gray-300">Grace Cha</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-light tracking-wide">Grace Cha</DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="cursor-pointer font-light tracking-wide text-gray-300">
+              <Link href="/dashboard/settings" className="cursor-pointer font-light tracking-wide">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </Link>
