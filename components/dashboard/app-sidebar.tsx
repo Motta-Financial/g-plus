@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Settings, Sparkles, LayoutDashboard } from "lucide-react"
+import { Calendar, Settings, Sparkles, LayoutDashboard, CheckSquare } from "lucide-react"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -22,6 +22,7 @@ export function AppSidebar() {
 
   const mainNavItems = [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard/todo", label: "To Do List", icon: CheckSquare },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
     { href: "/dashboard/assistant", label: "Assistant", icon: Sparkles },
   ]

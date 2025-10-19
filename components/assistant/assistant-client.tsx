@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useChat } from "ai/react"
+import { useChat } from "ai"
 import { Send, Sparkles } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
