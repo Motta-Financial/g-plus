@@ -49,7 +49,7 @@ export function TaskBoard({ tasks, viewMode, onTasksChange, workstreams }: TaskB
 
   return (
     <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="space-y-6">
         <PriorityColumn title="Big Rocks" tasks={bigRocks} color="bg-red-500" workstreams={workstreams} />
         <PriorityColumn title="Medium Rocks" tasks={mediumRocks} color="bg-amber-500" workstreams={workstreams} />
         <PriorityColumn title="Small Rocks" tasks={smallRocks} color="bg-emerald-500" workstreams={workstreams} />

@@ -8,10 +8,12 @@ import type {
   TriageItem,
   TaskPriority,
   CalendarConnection,
+  Project,
 } from "./types"
 
 interface AppState {
   workstreams: Workstream[]
+  projects: Project[]
   tasks: Task[]
   events: CalendarEvent[]
   courses: CanvasCourse[]
@@ -32,6 +34,9 @@ interface AppState {
   addWorkstream: (workstream: Omit<Workstream, "id" | "created_at" | "updated_at">) => void
   updateWorkstream: (id: string, updates: Partial<Workstream>) => void
   deleteWorkstream: (id: string) => void
+  addProject: (project: Omit<Project, "id" | "created_at" | "updated_at">) => void
+  updateProject: (id: string, updates: Partial<Project>) => void
+  deleteProject: (id: string) => void
   addTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => void
   updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
@@ -99,6 +104,7 @@ export const useAppStore = create<AppState>()(
           updated_at: new Date().toISOString(),
         },
       ],
+      projects: [],
       tasks: [
         // Suffolk University (SCHOOL) tasks
         {
@@ -614,7 +620,31 @@ export const useAppStore = create<AppState>()(
       deleteWorkstream: (id) =>
         set((state) => ({
           workstreams: state.workstreams.filter((w) => w.id !== id),
+          projects: state.projects.filter((p) => p.workstream_id !== id),
           tasks: state.tasks.filter((t) => t.workstream_id !== id),
+        })),
+      addProject: (project) =>
+        set((state) => ({
+          projects: [
+            ...state.projects,
+            {
+              ...project,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateProject: (id, updates) =>
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, ...updates, updated_at: new Date().toISOString() } : p,
+          ),
+        })),
+      deleteProject: (id) =>
+        set((state) => ({
+          projects: state.projects.filter((p) => p.id !== id),
+          tasks: state.tasks.map((t) => (t.project_id === id ? { ...t, project_id: undefined } : t)),
         })),
       addTask: (task) =>
         set((state) => ({

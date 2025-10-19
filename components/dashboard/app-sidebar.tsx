@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar, Settings, LayoutDashboard, CheckSquare, Bell } from "lucide-react"
+import { Calendar, Settings, LayoutDashboard, CheckSquare, Bell, FolderKanban } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 export function AppSidebar() {
@@ -28,6 +28,7 @@ export function AppSidebar() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/todo", label: "To Do List", icon: CheckSquare },
     { href: "/dashboard/triage", label: "Triage", icon: Bell, badge: pendingTriageCount },
+    { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
   ]
 
