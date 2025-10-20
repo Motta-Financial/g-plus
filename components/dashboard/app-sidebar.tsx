@@ -5,20 +5,14 @@ import { usePathname } from "next/navigation"
 import { useAppStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Calendar, Settings, LayoutDashboard, CheckSquare, Bell, FolderKanban } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { UserButton, useUser } from "@clerk/nextjs"
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { user } = useUser()
   const workstreams = useAppStore((state) => state.workstreams)
   const pendingTriageCount = useAppStore(
     (state) => state.triageItems.filter((item) => item.status === "pending").length,
@@ -37,8 +31,10 @@ export function AppSidebar() {
       <div className="border-b px-6 py-8">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border">
+            <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-light">
-              GC
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -107,30 +103,19 @@ export function AppSidebar() {
       </div>
 
       <div className="border-t p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-3 h-12">
-              <Avatar className="h-8 w-8 border">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
-                  GC
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start text-left">
-                <p className="text-sm font-light">Account</p>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-light tracking-wide">Grace Cha</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="cursor-pointer font-light tracking-wide">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-3 px-3 py-2">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8",
+              },
+            }}
+          />
+          <div className="flex flex-col items-start text-left flex-1">
+            <p className="text-sm font-light">{user?.fullName || "User"}</p>
+            <p className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
