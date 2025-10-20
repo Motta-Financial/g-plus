@@ -138,12 +138,22 @@ export function SuffolkClassSections() {
                         <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
                       )}
 
-                      {task.due_date && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>Due {format(new Date(task.due_date), "MMM d, yyyy")}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {task.class && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs font-normal bg-blue-500/5 text-blue-600 border-blue-500/20"
+                          >
+                            {task.class}
+                          </Badge>
+                        )}
+                        {task.due_date && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>Due {format(new Date(task.due_date), "MMM d, yyyy")}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <Button

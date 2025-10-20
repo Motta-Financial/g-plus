@@ -39,6 +39,7 @@ export interface Task {
   due_date?: string
   completed_at?: string
   order_index: number
+  class?: string
   canvas_assignment_id?: string
   canvas_course_id?: string
   canvas_url?: string

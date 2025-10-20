@@ -113,6 +113,11 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   {workstream.icon} {workstream.name}
                 </Badge>
               )}
+              {task.class && (
+                <Badge variant="outline" className="font-normal bg-blue-500/5 text-blue-600 border-blue-500/20">
+                  {task.class}
+                </Badge>
+              )}
               {project && (
                 <Badge variant="outline" className="gap-1 font-normal bg-primary/5 text-primary border-primary/20">
                   <FolderKanban className="h-3 w-3" />
@@ -187,6 +192,11 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   }}
                 >
                   {workstream.icon} {workstream.name}
+                </Badge>
+              )}
+              {task.class && (
+                <Badge variant="outline" className="font-normal bg-blue-500/5 text-blue-600 border-blue-500/20">
+                  {task.class}
                 </Badge>
               )}
               {project && (

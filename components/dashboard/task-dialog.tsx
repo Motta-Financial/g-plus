@@ -43,6 +43,7 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("none")
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [dueDate, setDueDate] = useState("")
+  const [classField, setClassField] = useState("")
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
 
@@ -58,6 +59,9 @@ export function TaskDialog({
 
   const isEditMode = mode === "edit" || !!editTask
 
+  const selectedWorkstream = workstreams.find((w) => w.id === workstreamId)
+  const isSchoolWorkstream = selectedWorkstream?.type === "school"
+
   useEffect(() => {
     if (open) {
       if (isEditMode && editTask) {
@@ -66,6 +70,7 @@ export function TaskDialog({
         setWorkstreamId(editTask.workstream_id)
         setProjectId(editTask.project_id || "none")
         setPriority(editTask.priority)
+        setClassField(editTask.class || "")
         if (editTask.due_date) {
           const date = new Date(editTask.due_date)
           setDueDate(date.toISOString().split("T")[0])
@@ -78,6 +83,7 @@ export function TaskDialog({
         setWorkstreamId(defaultWorkstreamId || "")
         setProjectId("none")
         setPriority("small_rock")
+        setClassField("")
         if (defaultDueDate) {
           const date = new Date(defaultDueDate)
           setDueDate(date.toISOString().split("T")[0])
@@ -121,6 +127,7 @@ export function TaskDialog({
         project_id: projectId === "none" ? undefined : projectId,
         priority,
         due_date: dueDate || undefined,
+        class: classField || undefined,
       })
     } else {
       addTask({
@@ -131,6 +138,7 @@ export function TaskDialog({
         project_id: projectId === "none" ? undefined : projectId,
         priority,
         due_date: dueDate || undefined,
+        class: classField || undefined,
         status: "todo",
         order_index: 0,
       })
@@ -143,6 +151,7 @@ export function TaskDialog({
     setProjectId("none")
     setPriority("small_rock")
     setDueDate("")
+    setClassField("")
   }
 
   return (
@@ -207,6 +216,17 @@ export function TaskDialog({
               </Select>
             </div>
           </div>
+          {isSchoolWorkstream && (
+            <div className="space-y-2">
+              <Label htmlFor="class">Class</Label>
+              <Input
+                id="class"
+                placeholder="e.g., CS101, MATH202"
+                value={classField}
+                onChange={(e) => setClassField(e.target.value)}
+              />
+            </div>
+          )}
           {workstreamId && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
