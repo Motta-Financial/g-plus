@@ -9,12 +9,17 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, CheckCircle2, Circle, Clock, ExternalLink, MessageSquare, Send } from "lucide-react"
 import { format, isPast, isToday, isTomorrow, isThisWeek } from "date-fns"
-import type { Task } from "@/lib/types"
+import type { Task, TaskPriority } from "@/lib/types"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskDialog } from "@/components/dashboard/task-dialog"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { BulkActionBar } from "@/components/bulk-actions/bulk-action-bar"
+import { AdvancedFilterPanel, type FilterState } from "@/components/filters/advanced-filter-panel"
+import { applyTaskFilters } from "@/lib/filter-utils"
+import { toast } from "sonner"
 
 type FilterType = "all" | "today" | "upcoming" | "overdue"
 type StatusFilter = "all" | "todo" | "in_progress" | "blocked"
@@ -22,7 +27,10 @@ type StatusFilter = "all" | "todo" | "in_progress" | "blocked"
 export function TodoListClient() {
   const tasks = useAppStore((state) => state.tasks)
   const workstreams = useAppStore((state) => state.workstreams)
+  const projects = useAppStore((state) => state.projects)
+  const classes = useAppStore((state) => state.classes)
   const updateTask = useAppStore((state) => state.updateTask)
+  const deleteTask = useAppStore((state) => state.deleteTask)
   const addTaskComment = useAppStore((state) => state.addTaskComment)
 
   const [filterType, setFilterType] = useState<FilterType>("all")
@@ -31,6 +39,21 @@ export function TodoListClient() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [newComment, setNewComment] = useState("")
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState>({
+    search: "",
+    workstreamIds: [],
+    projectIds: [],
+    classIds: [],
+    priorities: [],
+    statuses: [],
+    dueDateFrom: undefined,
+    dueDateTo: undefined,
+    hasComments: undefined,
+    hasCanvas: undefined,
+  })
 
   const filteredTasks = useMemo(() => {
     let filtered = tasks.filter((task) => task.status !== "completed")
@@ -49,6 +72,8 @@ export function TodoListClient() {
       )
     }
 
+    filtered = applyTaskFilters(filtered, advancedFilters)
+
     return filtered.sort((a, b) => {
       const priorityOrder = { big_rock: 0, medium_rock: 1, small_rock: 2 }
       const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority]
@@ -61,7 +86,81 @@ export function TodoListClient() {
       if (b.due_date) return 1
       return 0
     })
-  }, [tasks, filterType, statusFilter])
+  }, [tasks, filterType, statusFilter, advancedFilters])
+
+  const handleToggleSelection = (taskId: string) => {
+    const newSelection = new Set(selectedTaskIds)
+    if (newSelection.has(taskId)) {
+      newSelection.delete(taskId)
+    } else {
+      newSelection.add(taskId)
+    }
+    setSelectedTaskIds(newSelection)
+  }
+
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === filteredTasks.length) {
+      setSelectedTaskIds(new Set())
+    } else {
+      setSelectedTaskIds(new Set(filteredTasks.map((t) => t.id)))
+    }
+  }
+
+  const handleBulkUpdatePriority = (priority: TaskPriority) => {
+    selectedTaskIds.forEach((taskId) => {
+      updateTask(taskId, { priority })
+    })
+    toast.success(`Updated ${selectedTaskIds.size} tasks`)
+    setSelectedTaskIds(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkUpdateWorkstream = (workstreamId: string) => {
+    selectedTaskIds.forEach((taskId) => {
+      updateTask(taskId, { workstream_id: workstreamId })
+    })
+    toast.success(`Updated ${selectedTaskIds.size} tasks`)
+    setSelectedTaskIds(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkUpdateProject = (projectId: string) => {
+    selectedTaskIds.forEach((taskId) => {
+      updateTask(taskId, { project_id: projectId === "none" ? undefined : projectId })
+    })
+    toast.success(`Updated ${selectedTaskIds.size} tasks`)
+    setSelectedTaskIds(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkUpdateClass = (classId: string) => {
+    selectedTaskIds.forEach((taskId) => {
+      updateTask(taskId, { class_id: classId === "none" ? undefined : classId })
+    })
+    toast.success(`Updated ${selectedTaskIds.size} tasks`)
+    setSelectedTaskIds(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkUpdateStatus = (status: string) => {
+    selectedTaskIds.forEach((taskId) => {
+      updateTask(taskId, { status: status as Task["status"] })
+    })
+    toast.success(`Updated ${selectedTaskIds.size} tasks`)
+    setSelectedTaskIds(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBulkDelete = () => {
+    if (confirm(`Are you sure you want to delete ${selectedTaskIds.size} tasks?`)) {
+      selectedTaskIds.forEach((taskId) => {
+        deleteTask(taskId)
+      })
+      toast.success(`Deleted ${selectedTaskIds.size} tasks`)
+      setSelectedTaskIds(new Set())
+      setIsSelectionMode(false)
+    }
+  }
 
   const getWorkstream = (workstreamId: string) => {
     return workstreams.find((w) => w.id === workstreamId)
@@ -100,8 +199,12 @@ export function TodoListClient() {
   }
 
   const handleTaskClick = (task: Task) => {
-    setSelectedTask(task)
-    setIsDialogOpen(true)
+    if (isSelectionMode) {
+      handleToggleSelection(task.id)
+    } else {
+      setSelectedTask(task)
+      setIsDialogOpen(true)
+    }
   }
 
   const handleEditTask = (task: Task, e: React.MouseEvent) => {
@@ -175,41 +278,69 @@ export function TodoListClient() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-4">
-          <Tabs value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-            <TabsList className="glass-effect">
-              <TabsTrigger value="all" className="tracking-wide">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="today" className="tracking-wide">
-                Today
-              </TabsTrigger>
-              <TabsTrigger value="upcoming" className="tracking-wide">
-                Upcoming
-              </TabsTrigger>
-              <TabsTrigger value="overdue" className="tracking-wide">
-                Overdue
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <AdvancedFilterPanel
+          filters={advancedFilters}
+          onFiltersChange={setAdvancedFilters}
+          workstreams={workstreams}
+          projects={projects}
+          classes={classes}
+        />
 
-          <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <TabsList className="glass-effect">
-              <TabsTrigger value="all" className="tracking-wide">
-                All Status
-              </TabsTrigger>
-              <TabsTrigger value="todo" className="tracking-wide">
-                To Do
-              </TabsTrigger>
-              <TabsTrigger value="in_progress" className="tracking-wide">
-                In Progress
-              </TabsTrigger>
-              <TabsTrigger value="blocked" className="tracking-wide">
-                Blocked
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Filters */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Tabs value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+              <TabsList className="glass-effect">
+                <TabsTrigger value="all" className="tracking-wide">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="today" className="tracking-wide">
+                  Today
+                </TabsTrigger>
+                <TabsTrigger value="upcoming" className="tracking-wide">
+                  Upcoming
+                </TabsTrigger>
+                <TabsTrigger value="overdue" className="tracking-wide">
+                  Overdue
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <TabsList className="glass-effect">
+                <TabsTrigger value="all" className="tracking-wide">
+                  All Status
+                </TabsTrigger>
+                <TabsTrigger value="todo" className="tracking-wide">
+                  To Do
+                </TabsTrigger>
+                <TabsTrigger value="in_progress" className="tracking-wide">
+                  In Progress
+                </TabsTrigger>
+                <TabsTrigger value="blocked" className="tracking-wide">
+                  Blocked
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isSelectionMode && (
+              <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                {selectedTaskIds.size === filteredTasks.length ? "Deselect All" : "Select All"}
+              </Button>
+            )}
+            <Button
+              variant={isSelectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode)
+                setSelectedTaskIds(new Set())
+              }}
+            >
+              {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
+            </Button>
+          </div>
         </div>
 
         {/* Task List */}
@@ -222,20 +353,34 @@ export function TodoListClient() {
             filteredTasks.map((task) => {
               const workstream = getWorkstream(task.workstream_id)
               const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))
+              const isSelected = selectedTaskIds.has(task.id)
 
               return (
                 <Card
                   key={task.id}
-                  className="glass-effect cursor-pointer border-border/50 p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 group"
+                  className={`glass-effect cursor-pointer border-border/50 p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 group ${
+                    isSelected ? "border-cyan-400/50 bg-cyan-400/5" : ""
+                  }`}
                   onClick={() => handleTaskClick(task)}
                 >
                   <div className="flex items-start gap-4">
-                    <button
-                      onClick={(e) => handleToggleComplete(task, e)}
-                      className="mt-1 transition-transform hover:scale-110"
-                    >
-                      {getStatusIcon(task.status)}
-                    </button>
+                    {isSelectionMode && (
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggleSelection(task.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1"
+                      />
+                    )}
+
+                    {!isSelectionMode && (
+                      <button
+                        onClick={(e) => handleToggleComplete(task, e)}
+                        className="mt-1 transition-transform hover:scale-110"
+                      >
+                        {getStatusIcon(task.status)}
+                      </button>
+                    )}
 
                     <div className="flex-1 space-y-2">
                       <div className="flex items-start justify-between gap-4">
@@ -313,6 +458,26 @@ export function TodoListClient() {
           )}
         </div>
 
+        {/* Bulk Action Bar */}
+        <BulkActionBar
+          selectedCount={selectedTaskIds.size}
+          onClearSelection={() => {
+            setSelectedTaskIds(new Set())
+            setIsSelectionMode(false)
+          }}
+          onUpdatePriority={handleBulkUpdatePriority}
+          onUpdateWorkstream={handleBulkUpdateWorkstream}
+          onUpdateProject={handleBulkUpdateProject}
+          onUpdateClass={handleBulkUpdateClass}
+          onUpdateStatus={handleBulkUpdateStatus}
+          onDelete={handleBulkDelete}
+          workstreams={workstreams}
+          projects={projects}
+          classes={classes}
+          showProject
+          showClass
+        />
+
         {/* Comments Dialog */}
         {selectedTask && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -325,7 +490,6 @@ export function TodoListClient() {
               </DialogHeader>
 
               <div className="space-y-4">
-                {/* Comments Section */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-light tracking-wide uppercase text-muted-foreground">Comments & Notes</h3>
 

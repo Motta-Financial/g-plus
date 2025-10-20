@@ -6,7 +6,7 @@ import { useAppStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban } from "lucide-react"
+import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban, Settings, BookOpen } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { UserButton, useUser } from "@clerk/nextjs"
 
@@ -14,16 +14,21 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { user } = useUser()
   const workstreams = useAppStore((state) => state.workstreams)
+
   const pendingTriageCount = useAppStore(
     (state) => state.triageItems.filter((item) => item.status === "pending").length,
   )
+  const pendingEmailCount = useAppStore((state) => state.emails.filter((email) => email.status === "pending").length)
+  const incompleteTodoCount = useAppStore((state) => state.tasks.filter((task) => task.status !== "completed").length)
 
   const mainNavItems = [
+    { href: "/dashboard/triage", label: "Triage", icon: Bell, badge: pendingTriageCount + pendingEmailCount },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/todo", label: "To Do List", icon: CheckSquare },
-    { href: "/dashboard/triage", label: "Triage", icon: Bell, badge: pendingTriageCount },
+    { href: "/dashboard/todo", label: "To Do List", icon: CheckSquare, badge: incompleteTodoCount },
     { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
+    { href: "/dashboard/classes", label: "Classes", icon: BookOpen },
     { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
+    { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
   return (
@@ -38,7 +43,8 @@ export function AppSidebar() {
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-xl font-light tracking-[0.2em]">Dashboard</h1>
+            <h1 className="text-xl font-light tracking-[0.2em]">G+</h1>
+            <p className="text-xs text-muted-foreground tracking-wide">Grace Plus</p>
           </div>
         </Link>
       </div>

@@ -10,6 +10,8 @@ import type {
   CalendarConnection,
   Project,
   Class,
+  EmailAccount,
+  Email,
 } from "./types"
 
 interface AppState {
@@ -21,6 +23,8 @@ interface AppState {
   courses: CanvasCourse[]
   triageItems: TriageItem[]
   calendarConnections: CalendarConnection[]
+  emailAccounts: EmailAccount[]
+  emails: Email[]
   settings: {
     theme: "light" | "dark" | "auto"
     primaryColor: string
@@ -58,6 +62,14 @@ interface AppState {
   updateCalendarConnection: (id: string, updates: Partial<CalendarConnection>) => void
   deleteCalendarConnection: (id: string) => void
   setCalendarConnections: (connections: CalendarConnection[]) => void
+  addEmailAccount: (account: Omit<EmailAccount, "id" | "created_at" | "updated_at">) => Promise<void>
+  updateEmailAccount: (id: string, updates: Partial<EmailAccount>) => void
+  deleteEmailAccount: (id: string) => Promise<void>
+  addEmail: (email: Omit<Email, "id" | "created_at" | "updated_at">) => void
+  updateEmail: (id: string, updates: Partial<Email>) => void
+  deleteEmail: (id: string) => void
+  addEmailComment: (emailId: string, content: string) => void
+  setEmails: (emails: Email[]) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -598,6 +610,8 @@ export const useAppStore = create<AppState>()(
       ],
       triageItems: [],
       calendarConnections: [],
+      emailAccounts: [],
+      emails: [],
       settings: {
         theme: "light",
         primaryColor: "#6366f1",
@@ -825,6 +839,77 @@ export const useAppStore = create<AppState>()(
       setCalendarConnections: (connections) =>
         set(() => ({
           calendarConnections: connections,
+        })),
+      addEmailAccount: async (account) => {
+        const newAccount = {
+          ...account,
+          id: Math.random().toString(36).substr(2, 9),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+        set((state) => ({
+          emailAccounts: [...state.emailAccounts, newAccount],
+        }))
+      },
+      updateEmailAccount: (id, updates) =>
+        set((state) => ({
+          emailAccounts: state.emailAccounts.map((acc) =>
+            acc.id === id ? { ...acc, ...updates, updated_at: new Date().toISOString() } : acc,
+          ),
+        })),
+      deleteEmailAccount: async (id) =>
+        set((state) => ({
+          emailAccounts: state.emailAccounts.filter((acc) => acc.id !== id),
+          emails: state.emails.filter((email) => email.email_account_id !== id),
+        })),
+      addEmail: (email) =>
+        set((state) => ({
+          emails: [
+            ...state.emails,
+            {
+              ...email,
+              id: Math.random().toString(36).substr(2, 9),
+              comments: [],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateEmail: (id, updates) =>
+        set((state) => ({
+          emails: state.emails.map((email) =>
+            email.id === id ? { ...email, ...updates, updated_at: new Date().toISOString() } : email,
+          ),
+        })),
+      deleteEmail: (id) =>
+        set((state) => ({
+          emails: state.emails.filter((email) => email.id !== id),
+        })),
+      addEmailComment: (emailId, content) =>
+        set((state) => ({
+          emails: state.emails.map((email) =>
+            email.id === emailId
+              ? {
+                  ...email,
+                  comments: [
+                    ...(email.comments || []),
+                    {
+                      id: Math.random().toString(36).substr(2, 9),
+                      email_id: emailId,
+                      user_id: "grace",
+                      content,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
+                    },
+                  ],
+                  updated_at: new Date().toISOString(),
+                }
+              : email,
+          ),
+        })),
+      setEmails: (emails) =>
+        set(() => ({
+          emails,
         })),
     }),
     {

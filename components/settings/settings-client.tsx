@@ -10,19 +10,17 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { CanvasSyncButton } from "@/components/canvas/canvas-sync-button"
 import { WorkstreamManager } from "./workstream-manager"
 import { ClassManager } from "./class-manager"
 import { CalendarConnections } from "./calendar-connections"
-import { Palette, Settings2, Workflow, GraduationCap } from "lucide-react"
+import { EmailAccounts } from "./email-accounts"
+import { Palette, Workflow, GraduationCap, Calendar, Mail } from "lucide-react"
 
 interface SettingsClientProps {
   initialSettings: any
 }
 
 export function SettingsClient({ initialSettings }: SettingsClientProps) {
-  const [canvasApiToken, setCanvasApiToken] = useState(initialSettings?.canvasApiToken || "")
-  const [canvasBaseUrl, setCanvasBaseUrl] = useState(initialSettings?.canvasBaseUrl || "https://canvas.suffolk.edu")
   const [theme, setTheme] = useState(initialSettings?.theme || "light")
   const [primaryColor, setPrimaryColor] = useState(initialSettings?.primaryColor || "#6366f1")
   const [secondaryColor, setSecondaryColor] = useState(initialSettings?.secondaryColor || "#8b5cf6")
@@ -30,29 +28,6 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   const [saving, setSaving] = useState(false)
   const updateSettings = useAppStore((state) => state.updateSettings)
   const { toast } = useToast()
-
-  const handleSaveIntegrations = async () => {
-    setSaving(true)
-    try {
-      updateSettings({
-        canvasApiToken,
-        canvasBaseUrl,
-      })
-
-      toast({
-        title: "Settings saved",
-        description: "Your Canvas settings have been updated successfully",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save settings",
-        variant: "destructive",
-      })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const handleSaveAppearance = async () => {
     setSaving(true)
@@ -98,15 +73,11 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage your integrations, appearance, and workstreams</p>
+          <p className="text-muted-foreground">Manage your appearance, workstreams, and integrations</p>
         </div>
 
-        <Tabs defaultValue="integrations" className="space-y-6">
+        <Tabs defaultValue="appearance" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="integrations" className="gap-2">
-              <Settings2 className="h-4 w-4" />
-              Integrations
-            </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
               Appearance
@@ -119,50 +90,15 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               <GraduationCap className="h-4 w-4" />
               Classes
             </TabsTrigger>
+            <TabsTrigger value="email" className="gap-2">
+              <Mail className="h-4 w-4" />
+              Email
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="integrations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Canvas LMS Integration</CardTitle>
-                <CardDescription>
-                  Connect your Suffolk University Canvas account to sync courses and assignments
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="canvas_base_url">Canvas Base URL</Label>
-                  <Input
-                    id="canvas_base_url"
-                    value={canvasBaseUrl}
-                    onChange={(e) => setCanvasBaseUrl(e.target.value)}
-                    placeholder="https://canvas.suffolk.edu"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="canvas_api_token">Canvas API Token</Label>
-                  <Input
-                    id="canvas_api_token"
-                    type="password"
-                    value={canvasApiToken}
-                    onChange={(e) => setCanvasApiToken(e.target.value)}
-                    placeholder="Enter your Canvas API token"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Get your API token from Canvas: Account → Settings → New Access Token
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveIntegrations} disabled={saving}>
-                    {saving ? "Saving..." : "Save Settings"}
-                  </Button>
-                  {canvasApiToken && <CanvasSyncButton />}
-                </div>
-              </CardContent>
-            </Card>
-
-            <CalendarConnections />
-          </TabsContent>
 
           <TabsContent value="appearance" className="space-y-6">
             <Card>
@@ -276,6 +212,14 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
 
           <TabsContent value="classes">
             <ClassManager />
+          </TabsContent>
+
+          <TabsContent value="email">
+            <EmailAccounts />
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <CalendarConnections />
           </TabsContent>
         </Tabs>
       </div>

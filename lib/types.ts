@@ -151,3 +151,62 @@ export interface CalendarConnection {
   created_at: string
   updated_at: string
 }
+
+export interface EmailAccount {
+  id: string
+  user_id: string
+  provider: "gmail" | "outlook" | "imap"
+  email_address: string
+  display_name?: string
+  access_token?: string
+  refresh_token?: string
+  expires_at?: string
+  is_active: boolean
+  last_synced_at?: string
+  sync_enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Email {
+  id: string
+  user_id: string
+  email_account_id: string
+  workstream_id?: string
+  project_id?: string
+  class_id?: string
+  external_id: string
+  thread_id?: string
+  subject: string
+  from_address: string
+  from_name?: string
+  to_addresses: string[]
+  cc_addresses: string[]
+  body_text?: string
+  body_html?: string
+  snippet?: string
+  received_at: string
+  priority?: TaskPriority
+  status: "pending" | "processed" | "dismissed" | "archived"
+  is_read: boolean
+  is_starred: boolean
+  has_attachments: boolean
+  labels: string[]
+  due_date?: string
+  created_at: string
+  updated_at: string
+  workstream?: Workstream
+  project?: Project
+  class?: Class
+  email_account?: EmailAccount
+  comments?: EmailComment[]
+}
+
+export interface EmailComment {
+  id: string
+  email_id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
