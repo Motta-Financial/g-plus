@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { CanvasSyncButton } from "@/components/canvas/canvas-sync-button"
 import { WorkstreamManager } from "./workstream-manager"
+import { ClassManager } from "./class-manager"
 import { CalendarConnections } from "./calendar-connections"
-import { Palette, Settings2, Workflow } from "lucide-react"
+import { Palette, Settings2, Workflow, GraduationCap } from "lucide-react"
 
 interface SettingsClientProps {
   initialSettings: any
@@ -113,6 +114,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
             <TabsTrigger value="workstreams" className="gap-2">
               <Workflow className="h-4 w-4" />
               Workstreams
+            </TabsTrigger>
+            <TabsTrigger value="classes" className="gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Classes
             </TabsTrigger>
           </TabsList>
 
@@ -267,6 +272,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
 
           <TabsContent value="workstreams">
             <WorkstreamManager />
+          </TabsContent>
+
+          <TabsContent value="classes">
+            <ClassManager />
           </TabsContent>
         </Tabs>
       </div>

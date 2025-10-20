@@ -41,21 +41,28 @@ export function TaskDialog({
   const [description, setDescription] = useState("")
   const [workstreamId, setWorkstreamId] = useState(defaultWorkstreamId || "")
   const [projectId, setProjectId] = useState<string>("none")
+  const [classId, setClassId] = useState<string>("none")
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [dueDate, setDueDate] = useState("")
-  const [classField, setClassField] = useState("")
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
+  const [showNewClass, setShowNewClass] = useState(false)
+  const [newClassName, setNewClassName] = useState("")
+  const [newClassCode, setNewClassCode] = useState("")
 
   const addTask = useAppStore((state) => state.addTask)
   const updateTask = useAppStore((state) => state.updateTask)
   const addProject = useAppStore((state) => state.addProject)
+  const addClass = useAppStore((state) => state.addClass)
   const allProjects = useAppStore((state) => state.projects)
+  const allClasses = useAppStore((state) => state.classes)
 
   const projects = useMemo(
     () => allProjects.filter((p) => p.workstream_id === workstreamId),
     [allProjects, workstreamId],
   )
+
+  const classes = useMemo(() => allClasses.filter((c) => c.workstream_id === workstreamId), [allClasses, workstreamId])
 
   const isEditMode = mode === "edit" || !!editTask
 
@@ -69,8 +76,8 @@ export function TaskDialog({
         setDescription(editTask.description || "")
         setWorkstreamId(editTask.workstream_id)
         setProjectId(editTask.project_id || "none")
+        setClassId(editTask.class_id || "none")
         setPriority(editTask.priority)
-        setClassField(editTask.class || "")
         if (editTask.due_date) {
           const date = new Date(editTask.due_date)
           setDueDate(date.toISOString().split("T")[0])
@@ -82,8 +89,8 @@ export function TaskDialog({
         setDescription(defaultDescription || "")
         setWorkstreamId(defaultWorkstreamId || "")
         setProjectId("none")
+        setClassId("none")
         setPriority("small_rock")
-        setClassField("")
         if (defaultDueDate) {
           const date = new Date(defaultDueDate)
           setDueDate(date.toISOString().split("T")[0])
@@ -93,26 +100,54 @@ export function TaskDialog({
       }
       setShowNewProject(false)
       setNewProjectName("")
+      setShowNewClass(false)
+      setNewClassName("")
+      setNewClassCode("")
     }
   }, [open, isEditMode, editTask, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
 
   useEffect(() => {
     if (workstreamId && !isEditMode) {
       setProjectId("none")
+      setClassId("none")
     }
   }, [workstreamId, isEditMode])
 
   const handleCreateProject = () => {
     if (newProjectName.trim() && workstreamId) {
-      const newProject = addProject({
+      const newProject = {
         user_id: "grace",
         workstream_id: workstreamId,
         name: newProjectName.trim(),
-        status: "active",
-      })
-      setProjectId(newProject.id)
+        status: "active" as const,
+      }
+      addClass(newProject)
+      const addedProject = allProjects[allProjects.length - 1]
+      if (addedProject) {
+        setProjectId(addedProject.id)
+      }
       setShowNewProject(false)
       setNewProjectName("")
+    }
+  }
+
+  const handleCreateClass = () => {
+    if (newClassName.trim() && workstreamId) {
+      const newClass = {
+        user_id: "grace",
+        workstream_id: workstreamId,
+        name: newClassName.trim(),
+        course_code: newClassCode.trim() || undefined,
+        status: "active" as const,
+      }
+      addClass(newClass)
+      const addedClass = allClasses[allClasses.length - 1]
+      if (addedClass) {
+        setClassId(addedClass.id)
+      }
+      setShowNewClass(false)
+      setNewClassName("")
+      setNewClassCode("")
     }
   }
 
@@ -125,9 +160,9 @@ export function TaskDialog({
         description,
         workstream_id: workstreamId,
         project_id: projectId === "none" ? undefined : projectId,
+        class_id: classId === "none" ? undefined : classId,
         priority,
         due_date: dueDate || undefined,
-        class: classField || undefined,
       })
     } else {
       addTask({
@@ -136,9 +171,9 @@ export function TaskDialog({
         description,
         workstream_id: workstreamId,
         project_id: projectId === "none" ? undefined : projectId,
+        class_id: classId === "none" ? undefined : classId,
         priority,
         due_date: dueDate || undefined,
-        class: classField || undefined,
         status: "todo",
         order_index: 0,
       })
@@ -149,9 +184,9 @@ export function TaskDialog({
     setDescription("")
     setWorkstreamId(defaultWorkstreamId || "")
     setProjectId("none")
+    setClassId("none")
     setPriority("small_rock")
     setDueDate("")
-    setClassField("")
   }
 
   return (
@@ -216,15 +251,59 @@ export function TaskDialog({
               </Select>
             </div>
           </div>
-          {isSchoolWorkstream && (
+          {isSchoolWorkstream && workstreamId && (
             <div className="space-y-2">
-              <Label htmlFor="class">Class</Label>
-              <Input
-                id="class"
-                placeholder="e.g., CS101, MATH202"
-                value={classField}
-                onChange={(e) => setClassField(e.target.value)}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="class">Class</Label>
+                {!showNewClass && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 text-xs text-primary hover:text-primary/80"
+                    onClick={() => setShowNewClass(true)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    New Class
+                  </Button>
+                )}
+              </div>
+              {showNewClass ? (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Class name..."
+                    value={newClassName}
+                    onChange={(e) => setNewClassName(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Course code (optional)..."
+                    value={newClassCode}
+                    onChange={(e) => setNewClassCode(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={handleCreateClass}>
+                      Add
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setShowNewClass(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Select value={classId} onValueChange={setClassId}>
+                  <SelectTrigger id="class">
+                    <SelectValue placeholder={classes.length === 0 ? "No classes yet" : "Select class"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {classes.map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        {classItem.course_code || classItem.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
           {workstreamId && (

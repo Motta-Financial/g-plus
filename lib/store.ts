@@ -9,11 +9,13 @@ import type {
   TaskPriority,
   CalendarConnection,
   Project,
+  Class,
 } from "./types"
 
 interface AppState {
   workstreams: Workstream[]
   projects: Project[]
+  classes: Class[]
   tasks: Task[]
   events: CalendarEvent[]
   courses: CanvasCourse[]
@@ -37,6 +39,9 @@ interface AppState {
   addProject: (project: Omit<Project, "id" | "created_at" | "updated_at">) => void
   updateProject: (id: string, updates: Partial<Project>) => void
   deleteProject: (id: string) => void
+  addClass: (classItem: Omit<Class, "id" | "created_at" | "updated_at">) => void
+  updateClass: (id: string, updates: Partial<Class>) => void
+  deleteClass: (id: string) => void
   addTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => void
   updateTask: (id: string, updates: Partial<Task>) => void
   deleteTask: (id: string) => void
@@ -105,6 +110,7 @@ export const useAppStore = create<AppState>()(
         },
       ],
       projects: [],
+      classes: [],
       tasks: [
         // Suffolk University (SCHOOL) tasks
         {
@@ -621,6 +627,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           workstreams: state.workstreams.filter((w) => w.id !== id),
           projects: state.projects.filter((p) => p.workstream_id !== id),
+          classes: state.classes.filter((c) => c.workstream_id !== id),
           tasks: state.tasks.filter((t) => t.workstream_id !== id),
         })),
       addProject: (project) =>
@@ -645,6 +652,29 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
           tasks: state.tasks.map((t) => (t.project_id === id ? { ...t, project_id: undefined } : t)),
+        })),
+      addClass: (classItem) =>
+        set((state) => ({
+          classes: [
+            ...state.classes,
+            {
+              ...classItem,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateClass: (id, updates) =>
+        set((state) => ({
+          classes: state.classes.map((c) =>
+            c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c,
+          ),
+        })),
+      deleteClass: (id) =>
+        set((state) => ({
+          classes: state.classes.filter((c) => c.id !== id),
+          tasks: state.tasks.map((t) => (t.class_id === id ? { ...t, class_id: undefined } : t)),
         })),
       addTask: (task) =>
         set((state) => ({

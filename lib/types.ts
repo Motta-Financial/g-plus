@@ -27,11 +27,26 @@ export interface Project {
   updated_at: string
 }
 
+export interface Class {
+  id: string
+  user_id: string
+  workstream_id: string
+  name: string
+  course_code?: string
+  description?: string
+  color?: string
+  instructor?: string
+  status: "active" | "completed" | "archived"
+  created_at: string
+  updated_at: string
+}
+
 export interface Task {
   id: string
   user_id: string
   workstream_id: string
   project_id?: string
+  class_id?: string
   title: string
   description?: string
   priority: TaskPriority
@@ -39,7 +54,6 @@ export interface Task {
   due_date?: string
   completed_at?: string
   order_index: number
-  class?: string
   canvas_assignment_id?: string
   canvas_course_id?: string
   canvas_url?: string
@@ -50,6 +64,7 @@ export interface Task {
   updated_at: string
   workstream?: Workstream
   project?: Project
+  class?: Class
 }
 
 export interface TaskComment {
