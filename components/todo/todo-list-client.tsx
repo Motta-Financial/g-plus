@@ -613,7 +613,7 @@ export function TodoListClient() {
             onOpenChange={setIsEditDialogOpen}
             workstreams={workstreams}
             onTaskCreated={() => setIsEditDialogOpen(false)}
-            editingTask={selectedTask}
+            editTask={selectedTask}
           />
         )}
       </div>
