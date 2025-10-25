@@ -2,6 +2,7 @@ export type WorkstreamType = "school" | "work" | "life" | "side_quest"
 export type TaskPriority = "big_rock" | "medium_rock" | "small_rock"
 export type TaskUrgency = "urgent" | "look_out" | "chill"
 export type TaskStatus = "todo" | "in_progress" | "completed" | "blocked"
+export type TaskTimeframe = "this_week" | "next_week"
 
 export interface Workstream {
   id: string
@@ -77,6 +78,7 @@ export interface Task {
   priority: TaskPriority
   urgency?: TaskUrgency // New urgency field for sorting
   status: TaskStatus
+  timeframe?: TaskTimeframe
   due_date?: string
   scheduled_time?: string
   scheduled_end_time?: string

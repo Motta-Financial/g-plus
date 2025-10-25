@@ -109,15 +109,15 @@ export function WeeklyPlannerCalendar() {
   }, [tasks, canvasAssignments])
 
   const inProgressItems = useMemo(() => {
-    const inProgressTasks: SchedulableItem[] = tasks
-      .filter((t) => t.status === "in_progress")
+    const thisWeekTasks: SchedulableItem[] = tasks
+      .filter((t) => t.timeframe === "this_week" && t.status !== "completed")
       .map((t) => ({ ...t, itemType: "task" as const }))
 
-    const inProgressAssignments: SchedulableItem[] = canvasAssignments
-      .filter((a) => a.status === "in_progress" && a.type === "assignment")
+    const thisWeekAssignments: SchedulableItem[] = canvasAssignments
+      .filter((a) => a.type === "assignment" && a.status !== "completed")
       .map((a) => ({ ...a, itemType: "assignment" as const }))
 
-    return [...inProgressTasks, ...inProgressAssignments]
+    return [...thisWeekTasks, ...thisWeekAssignments]
   }, [tasks, canvasAssignments])
 
   const getItemsForDay = (day: Date) => {
@@ -701,7 +701,7 @@ export function WeeklyPlannerCalendar() {
             {unscheduledItems.slice(0, 15).map((item) => (
               <div
                 key={`${item.itemType}-${item.id}`}
-                className={`text-xs px-2.5 py-1.5 rounded-md border ${getItemColor(item)} font-medium shadow-sm cursor-move hover:shadow-md transition-all hover:scale-105 flex items-center gap-1.5`}
+                className={`text-xs px-2.5 py-1.5 rounded-md border ${getItemColor(item)} font-medium shadow-sm cursor-move hover:shadow-md transition-all flex items-center gap-1.5`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, item)}
                 onDragEnd={handleDragEnd}
@@ -721,12 +721,12 @@ export function WeeklyPlannerCalendar() {
 
         <div className="p-5 border-t-2 border-gray-300 bg-gradient-to-b from-purple-50 to-white">
           <h3 className="text-base font-bold text-gray-900 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <Loader2 className="h-5 w-5 text-purple-600" />
-            In Progress
+            <Calendar className="h-5 w-5 text-purple-600" />
+            Do This Week
           </h3>
           <div className="space-y-2">
             {inProgressItems.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">No tasks in progress</p>
+              <p className="text-sm text-gray-500 italic">No tasks scheduled for this week</p>
             ) : (
               inProgressItems.map((item) => (
                 <div
