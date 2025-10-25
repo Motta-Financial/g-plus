@@ -7,15 +7,35 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
-import { CheckCircle2, X, ExternalLink, Bell, Sparkles, Mail, CalendarIcon } from "lucide-react"
+import { CheckCircle2, X, ExternalLink, Bell, Sparkles, Mail, CalendarIcon, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
-import { useState, useMemo } from "react"
+import { useState, useMemo, memo } from "react"
 import type { TaskPriority, Email, TriageItem } from "@/lib/types"
-import { DndContext, type DragEndEvent, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core"
+import {
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
 import { EmailDetailsDialog } from "@/components/triage/email-details-dialog"
 import { BulkActionBar } from "@/components/bulk-actions/bulk-action-bar"
 import { AdvancedFilterPanel, type FilterState } from "@/components/filters/advanced-filter-panel"
 import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type TriageItemType = "email" | "canvas"
 
@@ -63,6 +83,10 @@ export default function TriagePage() {
     hasComments: undefined,
     hasCanvas: undefined,
   })
+
+  const [showDismissConfirm, setShowDismissConfirm] = useState(false)
+  const [dismissTarget, setDismissTarget] = useState<"single" | "bulk">("single")
+  const [singleDismissItem, setSingleDismissItem] = useState<UnifiedTriageItem | null>(null)
 
   const unifiedItems = useMemo((): UnifiedTriageItem[] => {
     const canvasItems: UnifiedTriageItem[] = triageItems
@@ -174,6 +198,15 @@ export default function TriagePage() {
   }
 
   const handleBulkDismiss = () => {
+    if (selectedItemIds.size === 0) {
+      toast.error("No items selected")
+      return
+    }
+    setDismissTarget("bulk")
+    setShowDismissConfirm(true)
+  }
+
+  const confirmBulkDismiss = () => {
     selectedItemIds.forEach((itemId) => {
       const item = unifiedItems.find((i) => i.id === itemId)
       if (item) {
@@ -189,34 +222,28 @@ export default function TriagePage() {
     toast.success(`Dismissed ${selectedItemIds.size} items`)
     setSelectedItemIds(new Set())
     setIsSelectionMode(false)
-  }
-
-  const handleBulkUpdatePriority = (priority: TaskPriority) => {
-    selectedItemIds.forEach((itemId) => {
-      const item = unifiedItems.find((i) => i.id === itemId)
-      if (item) {
-        if (item.type === "canvas") {
-          const canvasItem = item.data as TriageItem
-          processTriageItem(canvasItem.id, priority)
-        } else {
-          const email = item.data as Email
-          updateEmail(email.id, { priority, status: "processed" })
-        }
-      }
-    })
-    toast.success(`Processed ${selectedItemIds.size} items`)
-    setSelectedItemIds(new Set())
-    setIsSelectionMode(false)
+    setShowDismissConfirm(false)
   }
 
   const handleDismiss = (item: UnifiedTriageItem) => {
-    if (item.type === "canvas") {
-      const canvasItem = item.data as TriageItem
+    setSingleDismissItem(item)
+    setDismissTarget("single")
+    setShowDismissConfirm(true)
+  }
+
+  const confirmSingleDismiss = () => {
+    if (!singleDismissItem) return
+
+    if (singleDismissItem.type === "canvas") {
+      const canvasItem = singleDismissItem.data as TriageItem
       updateTriageItem(canvasItem.id, { status: "dismissed" })
     } else {
-      const email = item.data as Email
+      const email = singleDismissItem.data as Email
       updateEmail(email.id, { status: "dismissed" })
     }
+    toast.success("Item dismissed")
+    setShowDismissConfirm(false)
+    setSingleDismissItem(null)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -256,6 +283,27 @@ export default function TriagePage() {
   }
 
   const activeItem = unifiedItems.find((item) => item.id === activeId)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts (prevents accidental drags)
+      },
+    }),
+  )
+
+  const stripHtml = useMemo(
+    () => (html: string) => {
+      const tmp = document.createElement("div")
+      tmp.innerHTML = html
+      return tmp.textContent || tmp.innerText || ""
+    },
+    [],
+  )
+
+  const handleBulkUpdatePriority = (priority: TaskPriority) => {
+    // Implementation for bulk update priority
+  }
 
   return (
     <DashboardLayout>
@@ -332,7 +380,12 @@ export default function TriagePage() {
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4 mt-6">
-            <DndContext onDragEnd={handleDragEnd} onDragStart={(event) => setActiveId(event.active.id as string)}>
+            <DndContext
+              onDragEnd={handleDragEnd}
+              onDragStart={(event) => setActiveId(event.active.id as string)}
+              collisionDetection={closestCenter}
+              sensors={sensors}
+            >
               <div className="grid gap-4 md:grid-cols-3 mb-8">
                 <PriorityDropZone priority="big_rock" label="Big Rock" color="text-red-400" />
                 <PriorityDropZone priority="medium_rock" label="Medium Rock" color="text-yellow-400" />
@@ -351,6 +404,7 @@ export default function TriagePage() {
                       isSelectionMode={isSelectionMode}
                       isSelected={selectedItemIds.has(item.id)}
                       onToggleSelection={handleToggleSelection}
+                      stripHtml={stripHtml}
                     />
                   ))
                 ) : (
@@ -398,30 +452,42 @@ export default function TriagePage() {
       </div>
 
       {selectedEmail && <EmailDetailsDialog email={selectedEmail} onClose={() => setSelectedEmail(null)} />}
+      <AlertDialog open={showDismissConfirm} onOpenChange={setShowDismissConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Confirm Dismiss
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {dismissTarget === "bulk"
+                ? `Are you sure you want to dismiss ${selectedItemIds.size} item${selectedItemIds.size > 1 ? "s" : ""}? This action cannot be undone.`
+                : "Are you sure you want to dismiss this item? This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowDismissConfirm(false)
+                setSingleDismissItem(null)
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={dismissTarget === "bulk" ? confirmBulkDismiss : confirmSingleDismiss}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Dismiss
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   )
 }
 
-function PriorityDropZone({ priority, label, color }: { priority: TaskPriority; label: string; color: string }) {
-  const { setNodeRef, isOver } = useDroppable({ id: priority })
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`p-6 border-2 border-dashed rounded-lg transition-all ${
-        isOver ? "border-cyan-400 bg-cyan-400/5 scale-105" : "border-border"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <Sparkles className={`h-5 w-5 ${color}`} />
-        <p className={`font-light tracking-wide ${color}`}>{label}</p>
-      </div>
-      <p className="text-xs text-muted-foreground mt-2">Drop items here to create tasks</p>
-    </div>
-  )
-}
-
-function DraggableTriageItem({
+const DraggableTriageItem = memo(function DraggableTriageItem({
   item,
   onDismiss,
   onEmailClick,
@@ -429,6 +495,7 @@ function DraggableTriageItem({
   isSelectionMode,
   isSelected,
   onToggleSelection,
+  stripHtml,
 }: {
   item: UnifiedTriageItem
   onDismiss: (item: UnifiedTriageItem) => void
@@ -437,6 +504,7 @@ function DraggableTriageItem({
   isSelectionMode: boolean
   isSelected: boolean
   onToggleSelection: (id: string) => void
+  stripHtml: (html: string) => string
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
@@ -446,7 +514,7 @@ function DraggableTriageItem({
   const style = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        opacity: isDragging ? 0.5 : 1,
+        transition: isDragging ? "none" : "transform 200ms ease",
       }
     : undefined
 
@@ -458,13 +526,21 @@ function DraggableTriageItem({
     }
   }
 
+  const processedDescription = useMemo(() => {
+    if (!item.description) return null
+    const stripped = stripHtml(item.description)
+    return stripped.substring(0, 200) + (stripped.length > 200 ? "..." : "")
+  }, [item.description, stripHtml])
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      className={`p-6 space-y-4 fashion-card ${!isSelectionMode && (isDragging ? "cursor-grabbing" : "cursor-grab")} ${
-        item.type === "email" && !isSelectionMode ? "hover:border-rose-400/50" : ""
-      } ${isSelected ? "border-cyan-400/50 bg-cyan-400/5" : ""} ${isSelectionMode ? "cursor-pointer" : ""}`}
+      className={`p-6 space-y-4 fashion-card transition-all ${
+        !isSelectionMode && (isDragging ? "cursor-grabbing opacity-50" : "cursor-grab")
+      } ${item.type === "email" && !isSelectionMode ? "hover:border-rose-400/50" : ""} ${
+        isSelected ? "border-cyan-400/50 bg-cyan-400/5" : ""
+      } ${isSelectionMode ? "cursor-pointer" : ""}`}
       {...(!isSelectionMode ? listeners : {})}
       {...(!isSelectionMode ? attributes : {})}
       onClick={handleClick}
@@ -499,13 +575,8 @@ function DraggableTriageItem({
               {item.course_name && <p className="text-sm text-muted-foreground">{item.course_name}</p>}
             </div>
 
-            {item.description && (
-              <div
-                className="text-sm text-muted-foreground prose prose-sm max-w-none line-clamp-3"
-                dangerouslySetInnerHTML={{
-                  __html: item.description.substring(0, 200) + (item.description.length > 200 ? "..." : ""),
-                }}
-              />
+            {processedDescription && (
+              <p className="text-sm text-muted-foreground line-clamp-3">{processedDescription}</p>
             )}
 
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -543,5 +614,24 @@ function DraggableTriageItem({
         )}
       </div>
     </Card>
+  )
+})
+
+function PriorityDropZone({ priority, label, color }: { priority: TaskPriority; label: string; color: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id: priority })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`p-6 border-2 border-dashed rounded-lg transition-all ${
+        isOver ? "border-cyan-400 bg-cyan-400/5 scale-105" : "border-border"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <Sparkles className={`h-5 w-5 ${color}`} />
+        <p className={`font-light tracking-wide ${color}`}>{label}</p>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">Drop items here to create tasks</p>
+    </div>
   )
 }
