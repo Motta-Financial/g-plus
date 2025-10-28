@@ -12,6 +12,7 @@ import type {
   Class,
   EmailAccount,
   Email,
+  CanvasAssignment,
 } from "./types"
 
 interface AppState {
@@ -19,6 +20,7 @@ interface AppState {
   projects: Project[]
   classes: Class[]
   tasks: Task[]
+  canvasAssignments: CanvasAssignment[]
   events: CalendarEvent[]
   courses: CanvasCourse[]
   triageItems: TriageItem[]
@@ -70,6 +72,12 @@ interface AppState {
   deleteEmail: (id: string) => void
   addEmailComment: (emailId: string, content: string) => void
   setEmails: (emails: Email[]) => void
+  addCanvasAssignment: (assignment: Omit<CanvasAssignment, "id" | "updated_at">) => void
+  updateCanvasAssignment: (id: string, updates: Partial<CanvasAssignment>) => void
+  deleteCanvasAssignment: (id: string) => void
+  setCanvasAssignments: (assignments: CanvasAssignment[]) => void
+  syncCanvasAssignments: (assignments: CanvasAssignment[]) => void
+  autoCreateClassesFromCanvas: (courses: CanvasCourse[]) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -122,73 +130,74 @@ export const useAppStore = create<AppState>()(
         },
       ],
       projects: [],
-      classes: [],
+      classes: [
+        {
+          id: "class-1",
+          user_id: "grace",
+          workstream_id: "1",
+          name: "Information Systems Management",
+          course_code: "ISOM-230",
+          instructor: "TBD",
+          schedule: "TBD",
+          canvas_course_id: "14239",
+          canvas_course_name: "Information Systems Management",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "class-2",
+          user_id: "grace",
+          workstream_id: "1",
+          name: "Small Business Strategy",
+          course_code: "SBS-400",
+          instructor: "TBD",
+          schedule: "TBD",
+          canvas_course_id: "14519",
+          canvas_course_name: "Small Business Strategy",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "class-3",
+          user_id: "grace",
+          workstream_id: "1",
+          name: "Business Law & Ethics",
+          course_code: "BLE-214",
+          instructor: "TBD",
+          schedule: "TBD",
+          canvas_course_id: "14845",
+          canvas_course_name: "Business Law & Ethics",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "class-4",
+          user_id: "grace",
+          workstream_id: "1",
+          name: "Intermediate Accounting I",
+          course_code: "ACCT-431",
+          instructor: "TBD",
+          schedule: "TBD",
+          canvas_course_id: "14880",
+          canvas_course_name: "Intermediate Accounting I",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "class-5",
+          user_id: "grace",
+          workstream_id: "1",
+          name: "Cost Accounting",
+          course_code: "ACCT-320",
+          instructor: "TBD",
+          schedule: "TBD",
+          canvas_course_id: "14890",
+          canvas_course_name: "Cost Accounting",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
       tasks: [
-        // Suffolk University (SCHOOL) tasks
-        {
-          id: "task-1",
-          user_id: "grace",
-          workstream_id: "1",
-          title: "EXAM 1",
-          description: "Online exam - Multiple Choice in class, 3 essays",
-          status: "todo",
-          priority: "big_rock",
-          due_date: "2025-10-02T00:00:00.000Z",
-          order_index: 0,
-          canvas_assignment_id: "14239",
-          canvas_course_id: "ISOM-230",
-          comments: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: "task-2",
-          user_id: "grace",
-          workstream_id: "1",
-          title: "EXAM 1",
-          description: "Multiple Choice in class, 3 essays",
-          status: "todo",
-          priority: "big_rock",
-          due_date: "2025-10-06T00:00:00.000Z",
-          order_index: 1,
-          canvas_assignment_id: "14519",
-          canvas_course_id: "ISOM-230",
-          comments: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: "task-3",
-          user_id: "grace",
-          workstream_id: "1",
-          title: "SQL Assignment",
-          description: "",
-          status: "todo",
-          priority: "medium_rock",
-          due_date: "2025-10-01T00:00:00.000Z",
-          order_index: 2,
-          canvas_assignment_id: "14845",
-          canvas_course_id: "ISOM-230",
-          comments: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: "task-4",
-          user_id: "grace",
-          workstream_id: "1",
-          title: "ESSAY",
-          description: "",
-          status: "todo",
-          priority: "big_rock",
-          due_date: "2025-10-08T00:00:00.000Z",
-          order_index: 3,
-          canvas_assignment_id: "14880",
-          canvas_course_id: "ISOM-230",
-          comments: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
         // Motta Financial (MOTTA) tasks
         {
           id: "task-5",
@@ -515,6 +524,68 @@ export const useAppStore = create<AppState>()(
           updated_at: new Date().toISOString(),
         },
       ],
+      canvasAssignments: [
+        {
+          id: "canvas-1",
+          canvas_id: "assignment-1",
+          type: "assignment",
+          course_id: "14239",
+          course_code: "ISOM-230",
+          course_name: "Information Systems Management",
+          title: "SQL Assignment",
+          description: "Complete the SQL exercises from Chapter 5",
+          due_date: "2025-09-30T23:59:59.000Z",
+          canvas_url: "https://canvas.suffolk.edu/courses/14239/assignments/1",
+          posted_at: "2025-09-15T00:00:00.000Z",
+          class_id: "class-1",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "canvas-2",
+          canvas_id: "assignment-2",
+          type: "assignment",
+          course_id: "14239",
+          course_code: "ISOM-230",
+          course_name: "Information Systems Management",
+          title: "EXAM 1",
+          description: "Online exam - Multiple Choice in class, 3 essays",
+          due_date: "2025-10-01T23:59:59.000Z",
+          canvas_url: "https://canvas.suffolk.edu/courses/14239/assignments/2",
+          posted_at: "2025-09-20T00:00:00.000Z",
+          class_id: "class-1",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "canvas-3",
+          canvas_id: "assignment-3",
+          type: "assignment",
+          course_id: "14519",
+          course_code: "SBS-400",
+          course_name: "Small Business Strategy",
+          title: "EXAM 1",
+          description: "Multiple Choice in class, 3 essays",
+          due_date: "2025-10-05T23:59:59.000Z",
+          canvas_url: "https://canvas.suffolk.edu/courses/14519/assignments/3",
+          posted_at: "2025-09-22T00:00:00.000Z",
+          class_id: "class-2",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: "canvas-4",
+          canvas_id: "assignment-4",
+          type: "assignment",
+          course_id: "14845",
+          course_code: "BLE-214",
+          course_name: "Business Law & Ethics",
+          title: "ESSAY",
+          description: "Write a 5-page essay on business ethics",
+          due_date: "2025-10-07T23:59:59.000Z",
+          canvas_url: "https://canvas.suffolk.edu/courses/14845/assignments/4",
+          posted_at: "2025-09-25T00:00:00.000Z",
+          class_id: "class-3",
+          updated_at: new Date().toISOString(),
+        },
+      ],
       events: [
         {
           id: "event-1",
@@ -547,8 +618,6 @@ export const useAppStore = create<AppState>()(
           description: "ISOM-230 - Multiple Choice, 3 essays, Essays due by 10/13",
           start_time: "2025-10-08T15:30:00.000Z",
           end_time: "2025-10-08T17:00:00.000Z",
-          canvas_assignment_id: "14239",
-          canvas_course_id: "ISOM-230",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -560,8 +629,6 @@ export const useAppStore = create<AppState>()(
           description: "ISOM-230 - ASSIGNMENT",
           start_time: "2025-10-08T00:00:00.000Z",
           end_time: "2025-10-08T23:59:59.000Z",
-          canvas_assignment_id: "14880",
-          canvas_course_id: "ISOM-230",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -787,26 +854,28 @@ export const useAppStore = create<AppState>()(
           const suffolkWorkstream = state.workstreams.find((ws) => ws.type === "school")
           if (!suffolkWorkstream) return state
 
-          const newTask: Task = {
+          const matchingClass = state.classes.find(
+            (c) => c.course_code === triageItem.course_code || c.canvas_course_id === triageItem.course_id,
+          )
+
+          const newAssignment: CanvasAssignment = {
             id: Math.random().toString(36).substr(2, 9),
-            user_id: "grace",
-            workstream_id: suffolkWorkstream.id,
+            canvas_id: triageItem.canvas_id,
+            type: triageItem.type,
+            course_id: triageItem.course_id,
+            course_code: triageItem.course_code || "",
+            course_name: triageItem.course_name || "",
             title: triageItem.title,
             description: triageItem.description,
-            priority,
-            status: "todo",
             due_date: triageItem.due_date,
-            canvas_assignment_id: triageItem.canvas_id,
-            canvas_course_id: triageItem.course_id,
             canvas_url: triageItem.canvas_url,
-            order_index: state.tasks.length,
-            comments: [],
-            created_at: new Date().toISOString(),
+            posted_at: triageItem.posted_at,
+            class_id: matchingClass?.id,
             updated_at: new Date().toISOString(),
           }
 
           return {
-            tasks: [...state.tasks, newTask],
+            canvasAssignments: [...state.canvasAssignments, newAssignment],
             triageItems: state.triageItems.map((item) =>
               item.id === triageItemId
                 ? { ...item, status: "processed" as const, updated_at: new Date().toISOString() }
@@ -911,6 +980,88 @@ export const useAppStore = create<AppState>()(
         set(() => ({
           emails,
         })),
+      addCanvasAssignment: (assignment) =>
+        set((state) => ({
+          canvasAssignments: [
+            ...state.canvasAssignments,
+            {
+              ...assignment,
+              id: Math.random().toString(36).substr(2, 9),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateCanvasAssignment: (id, updates) =>
+        set((state) => ({
+          canvasAssignments: state.canvasAssignments.map((a) =>
+            a.id === id ? { ...a, ...updates, updated_at: new Date().toISOString() } : a,
+          ),
+        })),
+      deleteCanvasAssignment: (id) =>
+        set((state) => ({
+          canvasAssignments: state.canvasAssignments.filter((a) => a.id !== id),
+        })),
+      setCanvasAssignments: (assignments) =>
+        set(() => ({
+          canvasAssignments: assignments,
+        })),
+      syncCanvasAssignments: (assignments) =>
+        set((state) => {
+          const suffolkWorkstream = state.workstreams.find((ws) => ws.type === "school")
+          if (!suffolkWorkstream) return state
+
+          const assignmentsWithClasses = assignments.map((assignment) => {
+            const matchingClass = state.classes.find(
+              (c) => c.canvas_course_id === assignment.course_id || c.course_code === assignment.course_code,
+            )
+            return {
+              ...assignment,
+              class_id: matchingClass?.id,
+              id: assignment.id || Math.random().toString(36).substr(2, 9),
+              updated_at: new Date().toISOString(),
+            }
+          })
+
+          return {
+            canvasAssignments: assignmentsWithClasses,
+          }
+        }),
+      autoCreateClassesFromCanvas: (courses) =>
+        set((state) => {
+          const suffolkWorkstream = state.workstreams.find((ws) => ws.type === "school")
+          if (!suffolkWorkstream) {
+            return state
+          }
+
+          const newClasses: Class[] = []
+
+          courses.forEach((course) => {
+            const existingClass = state.classes.find(
+              (c) => c.canvas_course_id === course.id || c.course_code === course.course_code,
+            )
+
+            if (!existingClass) {
+              newClasses.push({
+                id: Math.random().toString(36).substr(2, 9),
+                user_id: "grace",
+                workstream_id: suffolkWorkstream.id,
+                name: course.name,
+                course_code: course.course_code,
+                canvas_course_id: course.id,
+                canvas_course_name: course.name,
+                status: "active",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+            }
+          })
+
+          if (newClasses.length > 0) {
+            return { classes: [...state.classes, ...newClasses] }
+          }
+
+          return state
+        }),
     }),
     {
       name: "grace-pm-storage",

@@ -25,11 +25,13 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // IMPORTANT: Do not run code between createServerClient and supabase.auth.getUser()
-  // This refreshes the session and prevents random logouts
+  // IMPORTANT: Do not run code between createServerClient and getUser()
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  // Optional: Add authentication redirects here if needed
+  // For now, we'll allow all routes since the app uses client-side state
 
   return supabaseResponse
 }

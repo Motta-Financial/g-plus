@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, Calendar, ExternalLink, MessageSquare, Send, FolderKanban, Pencil } from "lucide-react"
+import { GripVertical, Calendar, ExternalLink, MessageSquare, Send, FolderKanban, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { useState, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -29,11 +29,23 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
   const updateTask = useAppStore((state) => state.updateTask)
   const addTaskComment = useAppStore((state) => state.addTaskComment)
   const allProjects = useAppStore((state) => state.projects)
+  const allClasses = useAppStore((state) => state.classes)
+  const triageItems = useAppStore((state) => state.triageItems)
 
   const project = useMemo(() => {
     if (!task.project_id) return null
     return allProjects.find((p) => p.id === task.project_id) || task.project
   }, [task.project_id, task.project, allProjects])
+
+  const classInfo = useMemo(() => {
+    if (!task.class_id) return null
+    return allClasses.find((c) => c.id === task.class_id) || task.class
+  }, [task.class_id, task.class, allClasses])
+
+  const canvasAssignment = useMemo(() => {
+    if (!task.canvas_assignment_id) return null
+    return triageItems.find((item) => item.canvas_id === task.canvas_assignment_id)
+  }, [task.canvas_assignment_id, triageItems])
 
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: task.id,
@@ -99,6 +111,19 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
               </Badge>
             </div>
             {task.description && <p className="text-sm text-muted-foreground text-pretty">{task.description}</p>}
+            {canvasAssignment && (
+              <div className="p-2 rounded-md bg-blue-500/5 border border-blue-500/20">
+                <div className="flex items-start gap-2">
+                  <BookOpen className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-600">{canvasAssignment.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {canvasAssignment.course_code} • {canvasAssignment.course_name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               {workstream && (
                 <Badge
@@ -113,9 +138,9 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   {workstream.icon} {workstream.name}
                 </Badge>
               )}
-              {task.class && (
-                <Badge variant="outline" className="font-normal bg-blue-500/5 text-blue-600 border-blue-500/20">
-                  {task.class}
+              {classInfo && (
+                <Badge variant="outline" className="font-normal bg-purple-500/5 text-purple-600 border-purple-500/20">
+                  {classInfo.course_code || classInfo.name}
                 </Badge>
               )}
               {project && (
@@ -131,7 +156,11 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                 </Badge>
               )}
               {task.canvas_url && (
-                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/5 font-normal" asChild>
+                <Badge
+                  variant="outline"
+                  className="gap-1 cursor-pointer hover:bg-blue-500/10 font-normal bg-blue-500/5 text-blue-600 border-blue-500/20"
+                  asChild
+                >
                   <a
                     href={task.canvas_url}
                     target="_blank"
@@ -179,7 +208,33 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Task Details */}
+            {canvasAssignment && (
+              <Card className="p-4 bg-blue-500/5 border-blue-500/20">
+                <div className="flex items-start gap-3">
+                  <BookOpen className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <h4 className="font-medium text-blue-600">{canvasAssignment.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {canvasAssignment.course_code} • {canvasAssignment.course_name}
+                      </p>
+                    </div>
+                    {canvasAssignment.description && (
+                      <p className="text-sm text-muted-foreground">{canvasAssignment.description}</p>
+                    )}
+                    {task.canvas_url && (
+                      <Button variant="outline" size="sm" className="gap-2 bg-transparent" asChild>
+                        <a href={task.canvas_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                          Open in Canvas
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
+
             <div className="flex items-center gap-2 flex-wrap">
               {workstream && (
                 <Badge
@@ -194,9 +249,10 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   {workstream.icon} {workstream.name}
                 </Badge>
               )}
-              {task.class && (
-                <Badge variant="outline" className="font-normal bg-blue-500/5 text-blue-600 border-blue-500/20">
-                  {task.class}
+              {classInfo && (
+                <Badge variant="outline" className="font-normal bg-purple-500/5 text-purple-600 border-purple-500/20">
+                  <BookOpen className="h-3 w-3 mr-1" />
+                  {classInfo.course_code || classInfo.name}
                 </Badge>
               )}
               {project && (
@@ -214,21 +270,10 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   {format(new Date(task.due_date), "MMM d, yyyy")}
                 </Badge>
               )}
-              {task.canvas_url && (
-                <Badge variant="outline" className="gap-1 cursor-pointer hover:bg-primary/5 font-normal" asChild>
-                  <a href={task.canvas_url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                    View in Canvas
-                  </a>
-                </Badge>
-              )}
             </div>
 
-            {/* Comments Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium tracking-tight uppercase text-muted-foreground">Comments & Notes</h3>
-
-              {/* Existing Comments */}
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {task.comments && task.comments.length > 0 ? (
                   task.comments.map((comment) => (
@@ -243,8 +288,6 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   <p className="text-sm text-muted-foreground text-center py-4">No comments yet</p>
                 )}
               </div>
-
-              {/* Add Comment */}
               <div className="flex gap-2">
                 <Textarea
                   placeholder="Add a comment or note..."

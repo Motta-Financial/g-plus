@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import type { Task, Workstream, TaskPriority } from "@/lib/types"
+import type { Task, Workstream, TaskPriority, TaskUrgency, TaskTimeframe } from "@/lib/types"
 import { useAppStore } from "@/lib/store"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus } from "lucide-react"
+import { Plus, ExternalLink, X } from "lucide-react"
 
 interface TaskDialogProps {
   open: boolean
@@ -23,6 +23,7 @@ interface TaskDialogProps {
   defaultDueDate?: string
   editTask?: Task
   mode?: "create" | "edit"
+  linkedCanvasAssignmentId?: string
 }
 
 export function TaskDialog({
@@ -36,6 +37,7 @@ export function TaskDialog({
   defaultDueDate,
   editTask,
   mode = "create",
+  linkedCanvasAssignmentId,
 }: TaskDialogProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -43,12 +45,15 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("none")
   const [classId, setClassId] = useState<string>("none")
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
+  const [urgency, setUrgency] = useState<TaskUrgency | undefined>(undefined) // New urgency state
+  const [timeframe, setTimeframe] = useState<TaskTimeframe | undefined>(undefined) // Added timeframe state
   const [dueDate, setDueDate] = useState("")
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [showNewClass, setShowNewClass] = useState(false)
   const [newClassName, setNewClassName] = useState("")
   const [newClassCode, setNewClassCode] = useState("")
+  const [canvasAssignmentId, setCanvasAssignmentId] = useState<string>("")
 
   const addTask = useAppStore((state) => state.addTask)
   const updateTask = useAppStore((state) => state.updateTask)
@@ -56,6 +61,7 @@ export function TaskDialog({
   const addClass = useAppStore((state) => state.addClass)
   const allProjects = useAppStore((state) => state.projects)
   const allClasses = useAppStore((state) => state.classes)
+  const canvasAssignments = useAppStore((state) => state.canvasAssignments)
 
   const projects = useMemo(
     () => allProjects.filter((p) => p.workstream_id === workstreamId),
@@ -69,6 +75,38 @@ export function TaskDialog({
   const selectedWorkstream = workstreams.find((w) => w.id === workstreamId)
   const isSchoolWorkstream = selectedWorkstream?.type === "school"
 
+  const stripHtml = (html: string | undefined) => {
+    if (!html) return ""
+    const tmp = document.createElement("DIV")
+    tmp.innerHTML = html
+    const text = tmp.textContent || tmp.innerText || ""
+    return text.trim()
+  }
+
+  useEffect(() => {
+    if (open && linkedCanvasAssignmentId) {
+      const assignment = canvasAssignments.find((a) => a.id === linkedCanvasAssignmentId)
+      if (assignment) {
+        setCanvasAssignmentId(assignment.id)
+        setTitle(assignment.title)
+        if (assignment.description) setDescription(stripHtml(assignment.description))
+        if (assignment.due_date) {
+          const date = new Date(assignment.due_date)
+          setDueDate(date.toISOString().split("T")[0])
+        }
+
+        // Auto-select the class if it exists
+        if (assignment.class_id) {
+          setClassId(assignment.class_id)
+          const classItem = allClasses.find((c) => c.id === assignment.class_id)
+          if (classItem) {
+            setWorkstreamId(classItem.workstream_id)
+          }
+        }
+      }
+    }
+  }, [open, linkedCanvasAssignmentId, canvasAssignments, allClasses])
+
   useEffect(() => {
     if (open) {
       if (isEditMode && editTask) {
@@ -78,19 +116,25 @@ export function TaskDialog({
         setProjectId(editTask.project_id || "none")
         setClassId(editTask.class_id || "none")
         setPriority(editTask.priority)
+        setUrgency(editTask.urgency)
+        setTimeframe(editTask.timeframe) // Load timeframe from task
+        setCanvasAssignmentId(editTask.linked_canvas_assignment_id || "")
         if (editTask.due_date) {
           const date = new Date(editTask.due_date)
           setDueDate(date.toISOString().split("T")[0])
         } else {
           setDueDate("")
         }
-      } else {
+      } else if (!linkedCanvasAssignmentId) {
         setTitle(defaultTitle || "")
         setDescription(defaultDescription || "")
         setWorkstreamId(defaultWorkstreamId || "")
         setProjectId("none")
         setClassId("none")
         setPriority("small_rock")
+        setUrgency(undefined)
+        setTimeframe(undefined) // Reset timeframe
+        setCanvasAssignmentId("")
         if (defaultDueDate) {
           const date = new Date(defaultDueDate)
           setDueDate(date.toISOString().split("T")[0])
@@ -104,14 +148,23 @@ export function TaskDialog({
       setNewClassName("")
       setNewClassCode("")
     }
-  }, [open, isEditMode, editTask, defaultTitle, defaultDescription, defaultWorkstreamId, defaultDueDate])
+  }, [
+    open,
+    isEditMode,
+    editTask,
+    defaultTitle,
+    defaultDescription,
+    defaultWorkstreamId,
+    defaultDueDate,
+    linkedCanvasAssignmentId,
+  ])
 
   useEffect(() => {
-    if (workstreamId && !isEditMode) {
+    if (workstreamId && !isEditMode && !linkedCanvasAssignmentId) {
       setProjectId("none")
       setClassId("none")
     }
-  }, [workstreamId, isEditMode])
+  }, [workstreamId, isEditMode, linkedCanvasAssignmentId])
 
   const handleCreateProject = () => {
     if (newProjectName.trim() && workstreamId) {
@@ -121,7 +174,7 @@ export function TaskDialog({
         name: newProjectName.trim(),
         status: "active" as const,
       }
-      addClass(newProject)
+      addProject(newProject)
       const addedProject = allProjects[allProjects.length - 1]
       if (addedProject) {
         setProjectId(addedProject.id)
@@ -162,7 +215,10 @@ export function TaskDialog({
         project_id: projectId === "none" ? undefined : projectId,
         class_id: classId === "none" ? undefined : classId,
         priority,
+        urgency,
+        timeframe,
         due_date: dueDate || undefined,
+        linked_canvas_assignment_id: canvasAssignmentId || undefined,
       })
     } else {
       addTask({
@@ -173,9 +229,12 @@ export function TaskDialog({
         project_id: projectId === "none" ? undefined : projectId,
         class_id: classId === "none" ? undefined : classId,
         priority,
+        urgency,
+        timeframe,
         due_date: dueDate || undefined,
         status: "todo",
         order_index: 0,
+        linked_canvas_assignment_id: canvasAssignmentId || undefined,
       })
     }
 
@@ -186,21 +245,62 @@ export function TaskDialog({
     setProjectId("none")
     setClassId("none")
     setPriority("small_rock")
+    setUrgency(undefined)
+    setTimeframe(undefined) // Reset timeframe
     setDueDate("")
+    setCanvasAssignmentId("")
   }
+
+  const linkedAssignment = canvasAssignmentId ? canvasAssignments.find((a) => a.id === canvasAssignmentId) : undefined
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-light text-2xl">{isEditMode ? "Edit Task" : "Create New Task"}</DialogTitle>
           <DialogDescription>
             {isEditMode
               ? "Update task details including workstream, project, and priority"
-              : "Add a new task to your workstream"}
+              : linkedAssignment
+                ? `Create a todo for: ${linkedAssignment.title}`
+                : "Add a new task to your workstream"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {linkedAssignment && (
+            <div className="p-4 rounded-lg border bg-blue-500/5 border-blue-500/20 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-600">Linked to Canvas Assignment</p>
+                  <p className="text-sm text-foreground mt-1">{linkedAssignment.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {linkedAssignment.course_code} • {linkedAssignment.course_name}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={() => setCanvasAssignmentId("")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              {linkedAssignment.canvas_url && (
+                <a
+                  href={linkedAssignment.canvas_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View in Canvas
+                </a>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="title">Task Title</Label>
             <Input
@@ -251,6 +351,42 @@ export function TaskDialog({
               </Select>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="urgency">Urgency (Optional)</Label>
+            <Select
+              value={urgency || "none"}
+              onValueChange={(value) => setUrgency(value === "none" ? undefined : (value as TaskUrgency))}
+            >
+              <SelectTrigger id="urgency">
+                <SelectValue placeholder="Select urgency level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="urgent">🔴 Urgent</SelectItem>
+                <SelectItem value="look_out">🟡 Look Out</SelectItem>
+                <SelectItem value="chill">🟢 Chill</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timeframe">Timeframe (Optional)</Label>
+            <Select
+              value={timeframe || "none"}
+              onValueChange={(value) => setTimeframe(value === "none" ? undefined : (value as TaskTimeframe))}
+            >
+              <SelectTrigger id="timeframe">
+                <SelectValue placeholder="Select timeframe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="this_week">📅 This Week</SelectItem>
+                <SelectItem value="next_week">📆 Next Week</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {isSchoolWorkstream && workstreamId && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -280,6 +416,11 @@ export function TaskDialog({
                     value={newClassCode}
                     onChange={(e) => setNewClassCode(e.target.value)}
                   />
+                  {canvasAssignmentId && newClassCode && (
+                    <p className="text-xs text-muted-foreground">
+                      💡 This will link to your Canvas course: {newClassCode}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <Button type="button" size="sm" onClick={handleCreateClass}>
                       Add

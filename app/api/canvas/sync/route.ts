@@ -11,53 +11,70 @@ export async function POST(request: Request) {
 
     const canvas = createCanvasClient(canvasBaseUrl || "https://canvas.suffolk.edu", canvasApiToken)
 
+    console.log("[v0] Fetching Canvas data...")
+
     // Fetch courses
     const courses = await canvas.getCourses()
+    console.log("[v0] Fetched courses:", courses.length)
 
     // Fetch assignments
     const assignments = await canvas.getUpcomingAssignments()
+    console.log("[v0] Fetched assignments:", assignments.length)
 
     // Fetch calendar events
     const calendarEvents = await canvas.getCalendarEvents()
 
     const announcements = await canvas.getAllAnnouncements()
+    console.log("[v0] Fetched announcements:", announcements.length)
 
-    const triageItems = [
-      ...announcements.map((announcement: any) => ({
-        type: "announcement" as const,
-        canvas_id: announcement.id.toString(),
-        course_id: announcement.context_code?.replace("course_", "") || "",
-        course_code: announcement.course_code,
-        course_name: announcement.course_name,
-        title: announcement.title,
-        description: announcement.message,
-        posted_at: announcement.posted_at,
-        canvas_url: `${canvasBaseUrl}/courses/${announcement.context_code?.replace("course_", "")}/discussion_topics/${announcement.id}`,
-        status: "pending" as const,
-      })),
+    // Format courses
+    const formattedCourses = courses.map((course: any) => ({
+      id: course.id.toString(),
+      name: course.name,
+      course_code: course.course_code,
+      enrollment_state: course.enrollment_state || "active",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }))
+
+    // Format Canvas assignments (not triage items)
+    const canvasAssignments = [
       ...assignments.map((assignment: any) => ({
-        type: "assignment" as const,
         canvas_id: assignment.id.toString(),
+        type: "assignment" as const,
         course_id: assignment.course_id?.toString() || "",
-        course_code: assignment.course_code,
-        course_name: assignment.course_name,
+        course_code: assignment.course_code || "",
+        course_name: assignment.course_name || "",
         title: assignment.name,
-        description: assignment.description,
+        description: assignment.description || "",
         due_date: assignment.due_at,
-        posted_at: assignment.created_at,
         canvas_url: `${canvasBaseUrl}/courses/${assignment.course_id}/assignments/${assignment.id}`,
-        status: "pending" as const,
+        posted_at: assignment.created_at,
+      })),
+      ...announcements.map((announcement: any) => ({
+        canvas_id: announcement.id.toString(),
+        type: "announcement" as const,
+        course_id: announcement.context_code?.replace("course_", "") || "",
+        course_code: announcement.course_code || "",
+        course_name: announcement.course_name || "",
+        title: announcement.title,
+        description: announcement.message || "",
+        due_date: null,
+        canvas_url: `${canvasBaseUrl}/courses/${announcement.context_code?.replace("course_", "")}/discussion_topics/${announcement.id}`,
+        posted_at: announcement.posted_at,
       })),
     ]
+
+    console.log("[v0] Formatted Canvas assignments:", canvasAssignments.length)
 
     return NextResponse.json({
       success: true,
       data: {
-        courses,
+        courses: formattedCourses,
+        canvasAssignments,
         assignments,
         events: calendarEvents,
         announcements,
-        triageItems,
       },
     })
   } catch (error) {
