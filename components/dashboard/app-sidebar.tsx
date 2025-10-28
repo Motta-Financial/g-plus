@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban, Settings, BookOpen } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { UserButton, useUser } from "@clerk/nextjs"
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { user } = useUser()
   const workstreams = useAppStore((state) => state.workstreams)
 
   const pendingTriageCount = useAppStore(
@@ -29,23 +31,15 @@ export function AppSidebar() {
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
-  const mockUser = {
-    firstName: "Grace",
-    lastName: "Cha",
-    fullName: "Grace Cha",
-    email: "grace@example.com",
-    imageUrl: "/placeholder.svg?height=40&width=40",
-  }
-
   return (
     <div className="flex h-screen w-64 flex-shrink-0 flex-col border-r bg-sidebar">
       <div className="border-b px-6 py-8">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border">
-            <AvatarImage src={mockUser.imageUrl || "/placeholder.svg"} alt={mockUser.fullName} />
+            <AvatarImage src={user?.imageUrl || "/placeholder.svg"} alt={user?.fullName || "User"} />
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-light">
-              {mockUser.firstName[0]}
-              {mockUser.lastName[0]}
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -116,16 +110,16 @@ export function AppSidebar() {
 
       <div className="border-t p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={mockUser.imageUrl || "/placeholder.svg"} alt={mockUser.fullName} />
-            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
-              {mockUser.firstName[0]}
-              {mockUser.lastName[0]}
-            </AvatarFallback>
-          </Avatar>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8",
+              },
+            }}
+          />
           <div className="flex flex-col items-start text-left flex-1">
-            <p className="text-sm font-light">{mockUser.fullName}</p>
-            <p className="text-xs text-muted-foreground">{mockUser.email}</p>
+            <p className="text-sm font-light">{user?.fullName || "User"}</p>
+            <p className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
           </div>
         </div>
       </div>

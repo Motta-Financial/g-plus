@@ -1,8 +1,6 @@
 export type WorkstreamType = "school" | "work" | "life" | "side_quest"
 export type TaskPriority = "big_rock" | "medium_rock" | "small_rock"
-export type TaskUrgency = "urgent" | "look_out" | "chill"
 export type TaskStatus = "todo" | "in_progress" | "completed" | "blocked"
-export type TaskTimeframe = "this_week" | "next_week"
 
 export interface Workstream {
   id: string
@@ -38,33 +36,9 @@ export interface Class {
   description?: string
   color?: string
   instructor?: string
-  canvas_course_id?: string
-  canvas_course_name?: string
   status: "active" | "completed" | "archived"
   created_at: string
   updated_at: string
-}
-
-export interface CanvasAssignment {
-  id: string
-  canvas_id: string
-  type: "assignment" | "announcement" | "event"
-  course_id: string
-  course_code: string
-  course_name: string
-  title: string
-  description?: string
-  due_date?: string
-  status?: TaskStatus
-  urgency?: TaskUrgency
-  scheduled_time?: string
-  scheduled_end_time?: string
-  points_possible?: number
-  submission_types?: string[]
-  canvas_url?: string
-  posted_at: string
-  updated_at: string
-  class_id?: string
 }
 
 export interface Task {
@@ -76,15 +50,13 @@ export interface Task {
   title: string
   description?: string
   priority: TaskPriority
-  urgency?: TaskUrgency // New urgency field for sorting
   status: TaskStatus
-  timeframe?: TaskTimeframe
   due_date?: string
-  scheduled_time?: string
-  scheduled_end_time?: string
   completed_at?: string
   order_index: number
-  linked_canvas_assignment_id?: string
+  canvas_assignment_id?: string
+  canvas_course_id?: string
+  canvas_url?: string
   external_id?: string
   external_source?: string
   comments?: TaskComment[]
@@ -93,7 +65,6 @@ export interface Task {
   workstream?: Workstream
   project?: Project
   class?: Class
-  linkedCanvasAssignment?: CanvasAssignment
 }
 
 export interface TaskComment {

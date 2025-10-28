@@ -88,29 +88,6 @@ export function TodoListClient() {
     })
   }, [tasks, filterType, statusFilter, advancedFilters])
 
-  const tasksByWorkstream = useMemo(() => {
-    const grouped = workstreams
-      .map((workstream) => {
-        const workstreamTasks = filteredTasks
-          .filter((t) => t.workstream_id === workstream.id)
-          .sort((a, b) => {
-            const priorityOrder = { big_rock: 0, medium_rock: 1, small_rock: 2 }
-            const aPriority = a.priority ? priorityOrder[a.priority] : 999
-            const bPriority = b.priority ? priorityOrder[b.priority] : 999
-            return aPriority - bPriority
-          })
-
-        return {
-          workstream,
-          tasks: workstreamTasks,
-          totalTasks: workstreamTasks.length,
-        }
-      })
-      .filter((group) => group.totalTasks > 0)
-
-    return grouped
-  }, [filteredTasks, workstreams])
-
   const handleToggleSelection = (taskId: string) => {
     const newSelection = new Set(selectedTaskIds)
     if (newSelection.has(taskId)) {
@@ -262,29 +239,6 @@ export function TodoListClient() {
     }
   }, [tasks])
 
-  const getClassColor = (courseCode: string | undefined) => {
-    if (!courseCode) {
-      return "bg-gray-100/60 text-gray-700 border-gray-300"
-    }
-
-    const courseCodeMatch = courseCode.match(/^([A-Z]+)\s*(\d+)/)
-    const extractedCode = courseCodeMatch
-      ? `${courseCodeMatch[1]}${courseCodeMatch[2]}`
-      : courseCode.replace(/[\s-]/g, "")
-    const normalizedCode = extractedCode.toUpperCase()
-
-    const colorMap: Record<string, string> = {
-      ISOM230: "bg-[#F4B3B3]/70 text-[#6E1313] border-[#F4B3B3]",
-      SBS400: "bg-[#002028]/60 text-white border-[#002028]",
-      BLE214: "bg-[#6E1313]/60 text-white border-[#6E1313]",
-      ACCT431: "bg-[#b0a598]/70 text-[#3d2d27] border-[#b0a598]",
-      ACCT320: "bg-[#802423]/60 text-white border-[#802423]",
-      ACCT520: "bg-[#7e6c61]/70 text-white border-[#7e6c61]",
-    }
-
-    return colorMap[normalizedCode] || "bg-[#b0a598]/60 text-[#3d2d27] border-[#b0a598]"
-  }
-
   return (
     <DashboardLayout>
       <div className="flex h-full flex-col gap-6 p-8">
@@ -390,151 +344,117 @@ export function TodoListClient() {
         </div>
 
         {/* Task List */}
-        <div className="flex-1 space-y-6 overflow-y-auto">
-          {tasksByWorkstream.length === 0 ? (
+        <div className="flex-1 space-y-2 overflow-y-auto">
+          {filteredTasks.length === 0 ? (
             <Card className="glass-effect border-border/50 p-12 text-center">
               <p className="text-sm tracking-wide text-muted-foreground">No tasks found</p>
             </Card>
           ) : (
-            tasksByWorkstream.map(({ workstream, tasks, totalTasks }) => (
-              <div key={workstream.id} className="space-y-4">
+            filteredTasks.map((task) => {
+              const workstream = getWorkstream(task.workstream_id)
+              const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))
+              const isSelected = selectedTaskIds.has(task.id)
+
+              return (
                 <Card
-                  className="glass-effect border-2 p-4"
-                  style={{
-                    borderColor: `${workstream.color}40`,
-                    backgroundColor: `${workstream.color}10`,
-                  }}
+                  key={task.id}
+                  className={`glass-effect cursor-pointer border-border/50 p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 group ${
+                    isSelected ? "border-cyan-400/50 bg-cyan-400/5" : ""
+                  }`}
+                  onClick={() => handleTaskClick(task)}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
-                      style={{
-                        backgroundColor: `${workstream.color}30`,
-                        boxShadow: `0 0 12px ${workstream.color}60`,
-                      }}
-                    >
-                      {workstream.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-foreground tracking-wide">{workstream.name}</h3>
-                      <p className="text-sm text-muted-foreground">{totalTasks} tasks</p>
+                  <div className="flex items-start gap-4">
+                    {isSelectionMode && (
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => handleToggleSelection(task.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1"
+                      />
+                    )}
+
+                    {!isSelectionMode && (
+                      <button
+                        onClick={(e) => handleToggleComplete(task, e)}
+                        className="mt-1 transition-transform hover:scale-110"
+                      >
+                        {getStatusIcon(task.status)}
+                      </button>
+                    )}
+
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="font-light tracking-wide text-foreground">{task.title}</h3>
+                          {task.description && (
+                            <p className="text-sm tracking-wide text-muted-foreground">{task.description}</p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => handleEditTask(task, e)}
+                          >
+                            Edit
+                          </Button>
+                          {workstream && (
+                            <Badge variant="outline" className="glass-effect border-border/50 font-light tracking-wide">
+                              <div
+                                className="mr-2 h-2 w-2 rounded-full"
+                                style={{
+                                  backgroundColor: workstream.color,
+                                  boxShadow: `0 0 8px ${workstream.color}80`,
+                                }}
+                              />
+                              {workstream.name}
+                            </Badge>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className={`glass-effect border font-light tracking-wide ${getPriorityColor(task.priority)}`}
+                          >
+                            {getPriorityLabel(task.priority)}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-sm tracking-wide">
+                        {task.due_date && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            <span className={isOverdue ? "text-red-400" : "text-muted-foreground"}>
+                              {getDueDateLabel(task.due_date)}
+                              {isOverdue && " (Overdue)"}
+                            </span>
+                          </div>
+                        )}
+                        {task.canvas_url && (
+                          <a
+                            href={task.canvas_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Canvas
+                          </a>
+                        )}
+                        {task.comments && task.comments.length > 0 && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <MessageSquare className="h-3 w-3" />
+                            {task.comments.length}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
-
-                <div className="space-y-2 pl-4">
-                  {tasks.map((task) => {
-                    const isOverdue =
-                      task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))
-                    const isSelected = selectedTaskIds.has(task.id)
-
-                    return (
-                      <Card
-                        key={task.id}
-                        className={`glass-effect cursor-pointer border-border/50 p-4 transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 group ${
-                          isSelected ? "border-cyan-400/50 bg-cyan-400/5" : ""
-                        }`}
-                        onClick={() => handleTaskClick(task)}
-                      >
-                        <div className="flex items-start gap-4">
-                          {isSelectionMode && (
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleToggleSelection(task.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-1"
-                            />
-                          )}
-
-                          {!isSelectionMode && (
-                            <button
-                              onClick={(e) => handleToggleComplete(task, e)}
-                              className="mt-1 transition-transform hover:scale-110"
-                            >
-                              {getStatusIcon(task.status)}
-                            </button>
-                          )}
-
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="space-y-1">
-                                <h3 className="font-light tracking-wide text-foreground">{task.title}</h3>
-                                {task.description && (
-                                  <p className="text-sm tracking-wide text-muted-foreground">{task.description}</p>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => handleEditTask(task, e)}
-                                >
-                                  Edit
-                                </Button>
-                                {task.class_id &&
-                                  (() => {
-                                    const taskClass = classes.find((c) => c.id === task.class_id)
-                                    if (taskClass?.course_code) {
-                                      return (
-                                        <span
-                                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${getClassColor(taskClass.course_code)}`}
-                                        >
-                                          {taskClass.course_code}
-                                        </span>
-                                      )
-                                    }
-                                    return null
-                                  })()}
-                                {task.priority && (
-                                  <Badge
-                                    variant="outline"
-                                    className={`glass-effect border font-light tracking-wide ${getPriorityColor(task.priority)}`}
-                                  >
-                                    {getPriorityLabel(task.priority)}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-sm tracking-wide">
-                              {task.due_date && (
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-3 w-3" />
-                                  <span className={isOverdue ? "text-red-400" : "text-muted-foreground"}>
-                                    {getDueDateLabel(task.due_date)}
-                                    {isOverdue && " (Overdue)"}
-                                  </span>
-                                </div>
-                              )}
-                              {task.canvas_url && (
-                                <a
-                                  href={task.canvas_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                  Canvas
-                                </a>
-                              )}
-                              {task.comments && task.comments.length > 0 && (
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <MessageSquare className="h-3 w-3" />
-                                  {task.comments.length}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    )
-                  })}
-                </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
@@ -613,7 +533,7 @@ export function TodoListClient() {
             onOpenChange={setIsEditDialogOpen}
             workstreams={workstreams}
             onTaskCreated={() => setIsEditDialogOpen(false)}
-            editTask={selectedTask}
+            editingTask={selectedTask}
           />
         )}
       </div>

@@ -13,8 +13,7 @@ export function CanvasSyncButton() {
   const { mutate } = useSWRConfig()
   const { canvasApiToken, canvasBaseUrl } = useAppStore((state) => state.settings)
   const setCourses = useAppStore((state) => state.setCourses)
-  const syncCanvasAssignments = useAppStore((state) => state.syncCanvasAssignments)
-  const autoCreateClassesFromCanvas = useAppStore((state) => state.autoCreateClassesFromCanvas)
+  const setTriageItems = useAppStore((state) => state.setTriageItems)
 
   const handleSync = async () => {
     if (!canvasApiToken) {
@@ -28,7 +27,6 @@ export function CanvasSyncButton() {
 
     setSyncing(true)
     try {
-      console.log("[v0] Starting Canvas sync...")
       const response = await fetch("/api/canvas/sync", {
         method: "POST",
         headers: {
@@ -41,23 +39,28 @@ export function CanvasSyncButton() {
       })
 
       const data = await response.json()
-      console.log("[v0] Canvas sync response:", data)
 
       if (response.ok) {
         if (data.data?.courses) {
-          console.log("[v0] Auto-creating classes from courses:", data.data.courses.length)
-          autoCreateClassesFromCanvas(data.data.courses)
-          setCourses(data.data.courses)
+          setCourses(
+            data.data.courses.map((course: any) => ({
+              id: course.id.toString(),
+              name: course.name,
+              course_code: course.course_code,
+              enrollment_state: course.enrollment_state,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })),
+          )
         }
 
-        if (data.data?.canvasAssignments) {
-          console.log("[v0] Syncing Canvas assignments:", data.data.canvasAssignments.length)
-          syncCanvasAssignments(data.data.canvasAssignments)
+        if (data.data?.triageItems) {
+          setTriageItems(data.data.triageItems)
         }
 
         toast({
           title: "Canvas synced successfully",
-          description: `Synced ${data.data?.courses?.length || 0} courses and ${data.data?.canvasAssignments?.length || 0} assignments`,
+          description: `Synced ${data.data?.courses?.length || 0} courses and ${data.data?.triageItems?.length || 0} new items`,
         })
         mutate(() => true)
       } else {
