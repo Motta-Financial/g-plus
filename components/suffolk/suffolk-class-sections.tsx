@@ -199,12 +199,11 @@ export function SuffolkClassSections() {
 
   const stripHtml = (html: string | undefined) => {
     if (!html) return ""
-    // Create a temporary div to parse HTML
-    const tmp = document.createElement("DIV")
-    tmp.innerHTML = html
-    // Get text content and trim whitespace
-    const text = tmp.textContent || tmp.innerText || ""
-    return text.trim()
+    // Use regex to strip HTML tags (works on both server and client)
+    return html
+      .replace(/<[^>]*>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim()
   }
 
   const renderCanvasAssignment = (assignment: any, isExpanded: boolean, index: number) => {
