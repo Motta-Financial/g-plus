@@ -13,7 +13,18 @@ import type {
   EmailAccount,
   Email,
   CanvasAssignment,
+  Transaction,
+  SavingsGoal,
+  Account,
+  Subscription,
+  FinancialGoal,
 } from "./types"
+import {
+  createTask,
+  updateTask as updateTaskDb,
+  deleteTask as deleteTaskDb,
+  addTaskComment as addTaskCommentDb,
+} from "./actions/tasks"
 
 interface AppState {
   workstreams: Workstream[]
@@ -27,6 +38,11 @@ interface AppState {
   calendarConnections: CalendarConnection[]
   emailAccounts: EmailAccount[]
   emails: Email[]
+  transactions: Transaction[]
+  savingsGoals: SavingsGoal[]
+  accounts: Account[]
+  subscriptions: Subscription[]
+  financialGoals: FinancialGoal[]
   settings: {
     theme: "light" | "dark" | "auto"
     primaryColor: string
@@ -48,10 +64,10 @@ interface AppState {
   addClass: (classItem: Omit<Class, "id" | "created_at" | "updated_at">) => void
   updateClass: (id: string, updates: Partial<Class>) => void
   deleteClass: (id: string) => void
-  addTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => void
-  updateTask: (id: string, updates: Partial<Task>) => void
-  deleteTask: (id: string) => void
-  addTaskComment: (taskId: string, content: string) => void
+  addTask: (task: Omit<Task, "id" | "created_at" | "updated_at">) => Promise<void>
+  updateTask: (id: string, updates: Partial<Task>) => Promise<void>
+  deleteTask: (id: string) => Promise<void>
+  addTaskComment: (taskId: string, content: string) => Promise<void>
   addEvent: (event: Omit<CalendarEvent, "id" | "created_at" | "updated_at">) => void
   updateSettings: (settings: Partial<AppState["settings"]>) => void
   setCourses: (courses: CanvasCourse[]) => void
@@ -72,12 +88,29 @@ interface AppState {
   deleteEmail: (id: string) => void
   addEmailComment: (emailId: string, content: string) => void
   setEmails: (emails: Email[]) => void
-  addCanvasAssignment: (assignment: Omit<CanvasAssignment, "id" | "updated_at">) => void
+  addCanvasAssignment: (assignment: Omit<CanvasAssignment, "id" | "created_at" | "updated_at">) => void
   updateCanvasAssignment: (id: string, updates: Partial<CanvasAssignment>) => void
   deleteCanvasAssignment: (id: string) => void
   setCanvasAssignments: (assignments: CanvasAssignment[]) => void
   syncCanvasAssignments: (assignments: CanvasAssignment[]) => void
   autoCreateClassesFromCanvas: (courses: CanvasCourse[]) => void
+  addTransaction: (transaction: Omit<Transaction, "id" | "created_at" | "updated_at">) => void
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void
+  deleteTransaction: (id: string) => void
+  addSavingsGoal: (goal: Omit<SavingsGoal, "id" | "created_at" | "updated_at">) => void
+  updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => void
+  deleteSavingsGoal: (id: string) => void
+  addAccount: (account: Omit<Account, "id" | "created_at" | "updated_at">) => void
+  updateAccount: (id: string, updates: Partial<Account>) => void
+  deleteAccount: (id: string) => void
+  addSubscription: (subscription: Omit<Subscription, "id" | "created_at" | "updated_at">) => void
+  updateSubscription: (id: string, updates: Partial<Subscription>) => void
+  deleteSubscription: (id: string) => void
+  addFinancialGoal: (goal: Omit<FinancialGoal, "id" | "created_at" | "updated_at">) => void
+  updateFinancialGoal: (id: string, updates: Partial<FinancialGoal>) => void
+  deleteFinancialGoal: (id: string) => void
+  resetClasses: () => void
+  removeDuplicateClasses: () => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -141,6 +174,7 @@ export const useAppStore = create<AppState>()(
           schedule: "TBD",
           canvas_course_id: "14239",
           canvas_course_name: "Information Systems Management",
+          image_url: "https://i.pinimg.com/736x/2f/7f/0a/2f7f0aa84758cea5ee41380870283bf9.jpg",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -154,6 +188,7 @@ export const useAppStore = create<AppState>()(
           schedule: "TBD",
           canvas_course_id: "14519",
           canvas_course_name: "Small Business Strategy",
+          image_url: "https://i.pinimg.com/736x/80/60/fe/8060fe25d0f42394f0559b4d7134f0ad.jpg",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -167,6 +202,7 @@ export const useAppStore = create<AppState>()(
           schedule: "TBD",
           canvas_course_id: "14845",
           canvas_course_name: "Business Law & Ethics",
+          image_url: "https://i.pinimg.com/736x/dc/8d/3e/dc8d3e0dc2772c4a9d7944c74e6e7d47.jpg",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -180,6 +216,7 @@ export const useAppStore = create<AppState>()(
           schedule: "TBD",
           canvas_course_id: "14880",
           canvas_course_name: "Intermediate Accounting I",
+          image_url: "https://i.pinimg.com/1200x/1c/c6/98/1cc6985766cc173152a957a05888c330.jpg",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -193,6 +230,7 @@ export const useAppStore = create<AppState>()(
           schedule: "TBD",
           canvas_course_id: "14890",
           canvas_course_name: "Cost Accounting",
+          image_url: "https://i.pinimg.com/736x/5f/9c/2f/5f9c2fb73caf6c8b9c3f8097b6d88d22.jpg",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -679,6 +717,11 @@ export const useAppStore = create<AppState>()(
       calendarConnections: [],
       emailAccounts: [],
       emails: [],
+      transactions: [],
+      savingsGoals: [],
+      accounts: [],
+      subscriptions: [],
+      financialGoals: [],
       settings: {
         theme: "light",
         primaryColor: "#6366f1",
@@ -757,49 +800,94 @@ export const useAppStore = create<AppState>()(
           classes: state.classes.filter((c) => c.id !== id),
           tasks: state.tasks.map((t) => (t.class_id === id ? { ...t, class_id: undefined } : t)),
         })),
-      addTask: (task) =>
+      addTask: async (task) => {
+        const newTask = {
+          ...task,
+          id: Math.random().toString(36).substr(2, 9),
+          comments: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
         set((state) => ({
-          tasks: [
-            ...state.tasks,
-            {
-              ...task,
-              id: Math.random().toString(36).substr(2, 9),
-              comments: [],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ],
-        })),
-      updateTask: (id, updates) =>
+          tasks: [...state.tasks, newTask],
+        }))
+
+        try {
+          const dbTask = await createTask(task)
+          if (dbTask) {
+            set((state) => ({
+              tasks: state.tasks.map((t) => (t.id === newTask.id ? { ...t, id: dbTask.id } : t)),
+            }))
+          }
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
+      updateTask: async (id, updates) => {
         set((state) => ({
           tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t)),
-        })),
-      deleteTask: (id) =>
+        }))
+
+        try {
+          await updateTaskDb(id, updates)
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
+      deleteTask: async (id) => {
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== id),
-        })),
-      addTaskComment: (taskId, content) =>
+        }))
+
+        try {
+          await deleteTaskDb(id)
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
+      addTaskComment: async (taskId, content) => {
+        const newComment = {
+          id: Math.random().toString(36).substr(2, 9),
+          task_id: taskId,
+          user_id: "grace",
+          content,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
         set((state) => ({
           tasks: state.tasks.map((t) =>
             t.id === taskId
               ? {
                   ...t,
-                  comments: [
-                    ...(t.comments || []),
-                    {
-                      id: Math.random().toString(36).substr(2, 9),
-                      task_id: taskId,
-                      user_id: "grace",
-                      content,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
-                    },
-                  ],
+                  comments: [...(t.comments || []), newComment],
                   updated_at: new Date().toISOString(),
                 }
               : t,
           ),
-        })),
+        }))
+
+        try {
+          const dbComment = await addTaskCommentDb(taskId, "grace", content)
+          if (dbComment) {
+            set((state) => ({
+              tasks: state.tasks.map((t) =>
+                t.id === taskId
+                  ? {
+                      ...t,
+                      comments: (t.comments || []).map((c) =>
+                        c.id === newComment.id ? { ...c, id: dbComment.id } : c,
+                      ),
+                    }
+                  : t,
+              ),
+            }))
+          }
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
       addEvent: (event) =>
         set((state) => ({
           events: [
@@ -1061,6 +1149,205 @@ export const useAppStore = create<AppState>()(
           }
 
           return state
+        }),
+      addTransaction: (transaction) =>
+        set((state) => ({
+          transactions: [
+            ...state.transactions,
+            {
+              ...transaction,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateTransaction: (id, updates) =>
+        set((state) => ({
+          transactions: state.transactions.map((t) =>
+            t.id === id ? { ...t, ...updates, updated_at: new Date().toISOString() } : t,
+          ),
+        })),
+      deleteTransaction: (id) =>
+        set((state) => ({
+          transactions: state.transactions.filter((t) => t.id !== id),
+        })),
+      addSavingsGoal: (goal) =>
+        set((state) => ({
+          savingsGoals: [
+            ...state.savingsGoals,
+            {
+              ...goal,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateSavingsGoal: (id, updates) =>
+        set((state) => ({
+          savingsGoals: state.savingsGoals.map((g) =>
+            g.id === id ? { ...g, ...updates, updated_at: new Date().toISOString() } : g,
+          ),
+        })),
+      deleteSavingsGoal: (id) =>
+        set((state) => ({
+          savingsGoals: state.savingsGoals.filter((g) => g.id !== id),
+        })),
+      addAccount: (account) =>
+        set((state) => ({
+          accounts: [
+            ...state.accounts,
+            {
+              ...account,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateAccount: (id, updates) =>
+        set((state) => ({
+          accounts: state.accounts.map((a) =>
+            a.id === id ? { ...a, ...updates, updated_at: new Date().toISOString() } : a,
+          ),
+        })),
+      deleteAccount: (id) =>
+        set((state) => ({
+          accounts: state.accounts.filter((a) => a.id !== id),
+        })),
+      addSubscription: (subscription) =>
+        set((state) => ({
+          subscriptions: [
+            ...state.subscriptions,
+            {
+              ...subscription,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateSubscription: (id, updates) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.map((s) =>
+            s.id === id ? { ...s, ...updates, updated_at: new Date().toISOString() } : s,
+          ),
+        })),
+      deleteSubscription: (id) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.filter((s) => s.id !== id),
+        })),
+      addFinancialGoal: (goal) =>
+        set((state) => ({
+          financialGoals: [
+            ...state.financialGoals,
+            {
+              ...goal,
+              id: Math.random().toString(36).substr(2, 9),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      updateFinancialGoal: (id, updates) =>
+        set((state) => ({
+          financialGoals: state.financialGoals.map((g) =>
+            g.id === id ? { ...g, ...updates, updated_at: new Date().toISOString() } : g,
+          ),
+        })),
+      deleteFinancialGoal: (id) =>
+        set((state) => ({
+          financialGoals: state.financialGoals.filter((g) => g.id !== id),
+        })),
+      resetClasses: () =>
+        set(() => ({
+          classes: [
+            {
+              id: "class-1",
+              user_id: "grace",
+              workstream_id: "1",
+              name: "Information Systems Management",
+              course_code: "ISOM-230",
+              instructor: "TBD",
+              schedule: "TBD",
+              canvas_course_id: "14239",
+              canvas_course_name: "Information Systems Management",
+              image_url: "https://i.pinimg.com/736x/2f/7f/0a/2f7f0aa84758cea5ee41380870283bf9.jpg",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "class-2",
+              user_id: "grace",
+              workstream_id: "1",
+              name: "Small Business Strategy",
+              course_code: "SBS-400",
+              instructor: "TBD",
+              schedule: "TBD",
+              canvas_course_id: "14519",
+              canvas_course_name: "Small Business Strategy",
+              image_url: "https://i.pinimg.com/736x/80/60/fe/8060fe25d0f42394f0559b4d7134f0ad.jpg",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "class-3",
+              user_id: "grace",
+              workstream_id: "1",
+              name: "Business Law & Ethics",
+              course_code: "BLE-214",
+              instructor: "TBD",
+              schedule: "TBD",
+              canvas_course_id: "14845",
+              canvas_course_name: "Business Law & Ethics",
+              image_url: "https://i.pinimg.com/736x/dc/8d/3e/dc8d3e0dc2772c4a9d7944c74e6e7d47.jpg",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "class-4",
+              user_id: "grace",
+              workstream_id: "1",
+              name: "Intermediate Accounting I",
+              course_code: "ACCT-431",
+              instructor: "TBD",
+              schedule: "TBD",
+              canvas_course_id: "14880",
+              canvas_course_name: "Intermediate Accounting I",
+              image_url: "https://i.pinimg.com/1200x/1c/c6/98/1cc6985766cc173152a957a05888c330.jpg",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: "class-5",
+              user_id: "grace",
+              workstream_id: "1",
+              name: "Cost Accounting",
+              course_code: "ACCT-320",
+              instructor: "TBD",
+              schedule: "TBD",
+              canvas_course_id: "14890",
+              canvas_course_name: "Cost Accounting",
+              image_url: "https://i.pinimg.com/736x/5f/9c/2f/5f9c2fb73caf6c8b9c3f8097b6d88d22.jpg",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+        })),
+      removeDuplicateClasses: () =>
+        set((state) => {
+          const uniqueClasses = state.classes.reduce((acc, current) => {
+            const exists = acc.find(
+              (c) => c.course_code === current.course_code || c.canvas_course_id === current.canvas_course_id,
+            )
+            if (!exists) {
+              acc.push(current)
+            }
+            return acc
+          }, [] as Class[])
+
+          return { classes: uniqueClasses }
         }),
     }),
     {

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
-import type { Task, Workstream, TaskPriority, TaskUrgency, TaskTimeframe } from "@/lib/types"
+import type { Task, Workstream, TaskPriority, TaskUrgency, TaskTimeframe, TaskStatus } from "@/lib/types"
 import { useAppStore } from "@/lib/store"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,7 @@ export function TaskDialog({
   const [priority, setPriority] = useState<TaskPriority>("small_rock")
   const [urgency, setUrgency] = useState<TaskUrgency | undefined>(undefined) // New urgency state
   const [timeframe, setTimeframe] = useState<TaskTimeframe | undefined>(undefined) // Added timeframe state
+  const [status, setStatus] = useState<TaskStatus>("todo") // Added status state for editing
   const [dueDate, setDueDate] = useState("")
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
@@ -119,6 +120,7 @@ export function TaskDialog({
         setPriority(editTask.priority)
         setUrgency(editTask.urgency)
         setTimeframe(editTask.timeframe) // Load timeframe from task
+        setStatus(editTask.status) // Load status from task
         setCanvasAssignmentId(editTask.linked_canvas_assignment_id || "")
         if (editTask.due_date) {
           const date = new Date(editTask.due_date)
@@ -134,7 +136,8 @@ export function TaskDialog({
         setClassId("none")
         setPriority("small_rock")
         setUrgency(undefined)
-        setTimeframe(undefined) // Reset timeframe
+        setTimeframe(undefined)
+        setStatus("todo") // Reset status to todo for new tasks
         setCanvasAssignmentId("")
         if (defaultDueDate) {
           const date = new Date(defaultDueDate)
@@ -218,6 +221,7 @@ export function TaskDialog({
         priority,
         urgency,
         timeframe,
+        status, // Include status in update
         due_date: dueDate || undefined,
         linked_canvas_assignment_id: canvasAssignmentId || undefined,
       })
@@ -247,7 +251,8 @@ export function TaskDialog({
     setClassId("none")
     setPriority("small_rock")
     setUrgency(undefined)
-    setTimeframe(undefined) // Reset timeframe
+    setTimeframe(undefined)
+    setStatus("todo") // Reset status
     setDueDate("")
     setCanvasAssignmentId("")
   }
@@ -506,6 +511,22 @@ export function TaskDialog({
             <Label htmlFor="due_date">Due Date</Label>
             <Input id="due_date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
+          {isEditMode && (
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as TaskStatus)}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todo">📋 To Do</SelectItem>
+                  <SelectItem value="in_progress">🔄 In Progress</SelectItem>
+                  <SelectItem value="completed">✅ Completed</SelectItem>
+                  <SelectItem value="blocked">🚫 Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

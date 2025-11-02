@@ -10,6 +10,7 @@ import { GripVertical, Calendar, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { useState, useMemo } from "react"
 import { TaskDialog } from "./task-dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface StickyNoteCardProps {
   task: Task
@@ -59,6 +60,14 @@ export function StickyNoteCard({
     })
   }
 
+  const handleStatusChange = (newStatus: Task["status"]) => {
+    setIsCompleted(newStatus === "completed")
+    updateTask(task.id, {
+      status: newStatus,
+      completed_at: newStatus === "completed" ? new Date().toISOString() : undefined,
+    })
+  }
+
   const stickyColors = {
     big_rock: "bg-red-100 border-red-300",
     medium_rock: "bg-yellow-100 border-yellow-300",
@@ -69,6 +78,13 @@ export function StickyNoteCard({
     urgent: { emoji: "🔴", label: "Urgent", color: "bg-red-100 border-red-400 text-red-700" },
     "look out": { emoji: "🟡", label: "Look Out", color: "bg-yellow-100 border-yellow-400 text-yellow-700" },
     chill: { emoji: "🟢", label: "Chill", color: "bg-green-100 border-green-400 text-green-700" },
+  }
+
+  const statusConfig = {
+    todo: { label: "To Do", emoji: "📋", color: "bg-gray-100 border-gray-400 text-gray-700" },
+    in_progress: { label: "In Progress", emoji: "🔄", color: "bg-blue-100 border-blue-400 text-blue-700" },
+    completed: { label: "Completed", emoji: "✅", color: "bg-green-100 border-green-400 text-green-700" },
+    blocked: { label: "Blocked", emoji: "🚫", color: "bg-red-100 border-red-400 text-red-700" },
   }
 
   return (
@@ -106,6 +122,22 @@ export function StickyNoteCard({
           {task.description && <p className="text-xs text-gray-600 line-clamp-2 pl-6">{task.description}</p>}
 
           <div className="flex items-center gap-1.5 flex-wrap pl-6">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Badge
+                  variant="outline"
+                  className={`text-xs px-2 py-0.5 font-medium rounded-md cursor-pointer hover:opacity-80 ${statusConfig[task.status].color}`}
+                >
+                  {statusConfig[task.status].emoji} {statusConfig[task.status].label}
+                </Badge>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => handleStatusChange("todo")}>📋 To Do</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange("in_progress")}>🔄 In Progress</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange("completed")}>✅ Completed</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange("blocked")}>🚫 Blocked</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {task.urgency && urgencyConfig[task.urgency] && (
               <Badge
                 variant="outline"

@@ -57,6 +57,7 @@ export interface CanvasAssignment {
   due_date?: string
   status?: TaskStatus
   urgency?: TaskUrgency
+  timeframe?: TaskTimeframe
   scheduled_time?: string
   scheduled_end_time?: string
   points_possible?: number
@@ -236,6 +237,80 @@ export interface EmailComment {
   email_id: string
   user_id: string
   content: string
+  created_at: string
+  updated_at: string
+}
+
+export type TransactionType = "income" | "expense"
+export type TransactionCategory =
+  | "Bills"
+  | "Food"
+  | "Grocery"
+  | "Gas"
+  | "Shopping"
+  | "Subscription"
+  | "Rent"
+  | "Hulu"
+  | "Car payment"
+  | "Eating out"
+  | "Target"
+  | "Tips"
+  | "Phone Bill"
+  | "Groceries"
+  | "Other"
+
+export interface Transaction {
+  id: string
+  user_id: string
+  type: TransactionType
+  category: TransactionCategory
+  amount: number
+  date: string
+  description?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SavingsGoal {
+  id: string
+  user_id: string
+  name: string
+  target_amount: number
+  current_amount: number
+  image_url?: string
+  website_url?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Account {
+  id: string
+  user_id: string
+  name: string
+  type: "checking" | "savings" | "credit"
+  balance: number
+  last_four?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Subscription {
+  id: string
+  user_id: string
+  name: string
+  amount: number
+  billing_cycle: "monthly" | "yearly"
+  next_billing_date: string
+  category: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FinancialGoal {
+  id: string
+  user_id: string
+  title: string
+  completed: boolean
   created_at: string
   updated_at: string
 }

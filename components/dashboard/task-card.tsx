@@ -14,6 +14,7 @@ import { format } from "date-fns"
 import { useState, useMemo } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TaskDialog } from "./task-dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface TaskCardProps {
   task: Task
@@ -67,6 +68,14 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
     })
   }
 
+  const handleStatusChange = (newStatus: Task["status"]) => {
+    setIsCompleted(newStatus === "completed")
+    updateTask(task.id, {
+      status: newStatus,
+      completed_at: newStatus === "completed" ? new Date().toISOString() : undefined,
+    })
+  }
+
   const handleAddComment = () => {
     if (newComment.trim()) {
       addTaskComment(task.id, newComment.trim())
@@ -74,10 +83,26 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
     }
   }
 
+  const handleTimeframeChange = (newTimeframe: Task["timeframe"]) => {
+    updateTask(task.id, { timeframe: newTimeframe })
+  }
+
   const priorityColors = {
     big_rock: "bg-red-500/10 text-red-600 border-red-500/20",
     medium_rock: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     small_rock: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  }
+
+  const statusConfig = {
+    todo: { label: "To Do", emoji: "📋", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" },
+    in_progress: { label: "In Progress", emoji: "🔄", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+    completed: { label: "Completed", emoji: "✅", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+    blocked: { label: "Blocked", emoji: "🚫", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+  }
+
+  const timeframeConfig = {
+    this_week: { label: "This Week", emoji: "📅", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+    next_week: { label: "Next Week", emoji: "📆", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   }
 
   return (
@@ -106,9 +131,52 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
           <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <h3 className={`font-medium tracking-tight ${isCompleted ? "line-through" : ""}`}>{task.title}</h3>
-              <Badge variant="outline" className={priorityColors[task.priority]}>
-                {task.priority.replace("_", " ")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Badge
+                      variant="outline"
+                      className={`${statusConfig[task.status].color} cursor-pointer hover:opacity-80`}
+                    >
+                      {statusConfig[task.status].emoji} {statusConfig[task.status].label}
+                    </Badge>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleStatusChange("todo")}>📋 To Do</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange("in_progress")}>
+                      🔄 In Progress
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange("completed")}>✅ Completed</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange("blocked")}>🚫 Blocked</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {task.timeframe && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Badge
+                        variant="outline"
+                        className={`${timeframeConfig[task.timeframe].color} cursor-pointer hover:opacity-80`}
+                      >
+                        {timeframeConfig[task.timeframe].emoji} {timeframeConfig[task.timeframe].label}
+                      </Badge>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleTimeframeChange("this_week")}>
+                        📅 This Week
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTimeframeChange("next_week")}>
+                        📆 Next Week
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTimeframeChange(undefined)}>
+                        ❌ Remove Timeframe
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Badge variant="outline" className={priorityColors[task.priority]}>
+                  {task.priority.replace("_", " ")}
+                </Badge>
+              </div>
             </div>
             {task.description && <p className="text-sm text-muted-foreground text-pretty">{task.description}</p>}
             {canvasAssignment && (
@@ -261,8 +329,8 @@ export function TaskCard({ task, isDragging = false, workstreams = [] }: TaskCar
                   {project.name}
                 </Badge>
               )}
-              <Badge variant="outline" className={priorityColors[task.priority]}>
-                {task.priority.replace("_", " ")}
+              <Badge variant="outline" className={statusConfig[task.status].color}>
+                {statusConfig[task.status].emoji} {statusConfig[task.status].label}
               </Badge>
               {task.due_date && (
                 <Badge variant="outline" className="gap-1 font-normal">

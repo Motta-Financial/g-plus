@@ -113,7 +113,7 @@ export function WeeklyPlannerCalendar() {
       .map((t) => ({ ...t, itemType: "task" as const }))
 
     const thisWeekAssignments: SchedulableItem[] = canvasAssignments
-      .filter((a) => a.type === "assignment" && a.status !== "completed")
+      .filter((a) => a.type === "assignment" && a.status !== "completed" && a.timeframe === "this_week")
       .map((a) => ({ ...a, itemType: "assignment" as const }))
 
     return [...thisWeekTasks, ...thisWeekAssignments]
@@ -760,6 +760,21 @@ export function WeeklyPlannerCalendar() {
                         <option value="in_progress">In Progress</option>
                         <option value="completed">Completed</option>
                       </select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs hover:bg-red-100 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (item.itemType === "task") {
+                            updateTask(item.id, { timeframe: undefined })
+                          } else {
+                            updateCanvasAssignment(item.id, { timeframe: undefined })
+                          }
+                        }}
+                      >
+                        Remove
+                      </Button>
                     </div>
                   </div>
                 )
