@@ -6,12 +6,43 @@ import { useAppStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban, Settings, BookOpen } from "lucide-react"
+import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban, Settings, BookOpen, LogOut } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import type { User } from "@supabase/supabase-js"
 
 export function AppSidebar() {
   const pathname = usePathname()
   const workstreams = useAppStore((state) => state.workstreams)
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/auth/login")
+    router.refresh()
+  }
 
   const pendingTriageCount = useAppStore(
     (state) => state.triageItems.filter((item) => item.status === "pending").length,
@@ -29,23 +60,31 @@ export function AppSidebar() {
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ]
 
-  const mockUser = {
-    firstName: "Grace",
-    lastName: "Cha",
-    fullName: "Grace Cha",
-    email: "grace@example.com",
-    imageUrl: "/placeholder.svg?height=40&width=40",
-  }
+  const displayUser = user
+    ? {
+        firstName: user.email?.split("@")[0] || "User",
+        lastName: "",
+        fullName: user.email?.split("@")[0] || "User",
+        email: user.email || "",
+        imageUrl: user.user_metadata?.avatar_url || "/placeholder.svg?height=40&width=40",
+      }
+    : {
+        firstName: "Grace",
+        lastName: "Cha",
+        fullName: "Grace Cha",
+        email: "grace@example.com",
+        imageUrl: "/placeholder.svg?height=40&width=40",
+      }
 
   return (
     <div className="flex h-screen w-64 flex-shrink-0 flex-col border-r bg-sidebar">
       <div className="border-b px-6 py-8">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border">
-            <AvatarImage src={mockUser.imageUrl || "/placeholder.svg"} alt={mockUser.fullName} />
+            <AvatarImage src={displayUser.imageUrl || "/placeholder.svg"} alt={displayUser.fullName} />
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-light">
-              {mockUser.firstName[0]}
-              {mockUser.lastName[0]}
+              {displayUser.firstName[0]}
+              {displayUser.lastName ? displayUser.lastName[0] : displayUser.firstName[1] || ""}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -117,17 +156,27 @@ export function AppSidebar() {
       <div className="border-t p-3">
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={mockUser.imageUrl || "/placeholder.svg"} alt={mockUser.fullName} />
+            <AvatarImage src={displayUser.imageUrl || "/placeholder.svg"} alt={displayUser.fullName} />
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
-              {mockUser.firstName[0]}
-              {mockUser.lastName[0]}
+              {displayUser.firstName[0]}
+              {displayUser.lastName ? displayUser.lastName[0] : displayUser.firstName[1] || ""}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col items-start text-left flex-1">
-            <p className="text-sm font-light">{mockUser.fullName}</p>
-            <p className="text-xs text-muted-foreground">{mockUser.email}</p>
+          <div className="flex flex-col items-start text-left flex-1 min-w-0">
+            <p className="text-sm font-light truncate w-full">{displayUser.fullName}</p>
+            <p className="text-xs text-muted-foreground truncate w-full">{displayUser.email}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+          className="w-full justify-start gap-2 mt-2 text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          {isSigningOut ? "Signing out..." : "Sign out"}
+        </Button>
       </div>
     </div>
   )
