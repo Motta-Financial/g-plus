@@ -31,6 +31,12 @@ export default function SignUpPage() {
       return
     }
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      setIsLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -76,8 +82,10 @@ export default function SignUpPage() {
                     id="password"
                     type="password"
                     required
+                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
                   />
                 </div>
                 <div className="grid gap-2">

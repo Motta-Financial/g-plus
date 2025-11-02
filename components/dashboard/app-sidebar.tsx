@@ -6,18 +6,36 @@ import { useAppStore } from "@/lib/store"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, LayoutDashboard, CheckSquare, Bell, FolderKanban, Settings, BookOpen, LogOut } from "lucide-react"
+import {
+  Calendar,
+  LayoutDashboard,
+  CheckSquare,
+  Bell,
+  FolderKanban,
+  Settings,
+  BookOpen,
+  LogOut,
+  User,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import type { User } from "@supabase/supabase-js"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function AppSidebar() {
   const pathname = usePathname()
   const workstreams = useAppStore((state) => state.workstreams)
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
   useEffect(() => {
@@ -62,9 +80,9 @@ export function AppSidebar() {
 
   const displayUser = user
     ? {
-        firstName: user.email?.split("@")[0] || "User",
-        lastName: "",
-        fullName: user.email?.split("@")[0] || "User",
+        firstName: user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "User",
+        lastName: user.user_metadata?.full_name?.split(" ").slice(1).join(" ") || "",
+        fullName: user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
         email: user.email || "",
         imageUrl: user.user_metadata?.avatar_url || "/placeholder.svg?height=40&width=40",
       }
@@ -154,29 +172,44 @@ export function AppSidebar() {
       </div>
 
       <div className="border-t p-3">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={displayUser.imageUrl || "/placeholder.svg"} alt={displayUser.fullName} />
-            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
-              {displayUser.firstName[0]}
-              {displayUser.lastName ? displayUser.lastName[0] : displayUser.firstName[1] || ""}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col items-start text-left flex-1 min-w-0">
-            <p className="text-sm font-light truncate w-full">{displayUser.fullName}</p>
-            <p className="text-xs text-muted-foreground truncate w-full">{displayUser.email}</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-          className="w-full justify-start gap-2 mt-2 text-muted-foreground hover:text-foreground"
-        >
-          <LogOut className="h-4 w-4" />
-          {isSigningOut ? "Signing out..." : "Sign out"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start gap-3 h-auto p-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={displayUser.imageUrl || "/placeholder.svg"} alt={displayUser.fullName} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-light">
+                  {displayUser.firstName[0]}
+                  {displayUser.lastName ? displayUser.lastName[0] : displayUser.firstName[1] || ""}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                <p className="text-sm font-light truncate w-full">{displayUser.fullName}</p>
+                <p className="text-xs text-muted-foreground truncate w-full">{displayUser.email}</p>
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/account" className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Account Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut} className="text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              {isSigningOut ? "Signing out..." : "Sign out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
