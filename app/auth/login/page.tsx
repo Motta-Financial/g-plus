@@ -20,23 +20,57 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("[v0] Creating Supabase client for login")
+      const supabase = createClient()
+
+      console.log("[v0] Attempting sign in with email:", email)
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-        },
       })
-      if (error) throw error
+
+      console.log("[v0] Sign in response:", {
+        hasData: !!data,
+        hasUser: !!data?.user,
+        error: signInError?.message,
+      })
+
+      if (signInError) {
+        throw signInError
+      }
+
+      if (!data?.user) {
+        throw new Error("Login failed: No user data returned")
+      }
+
+      console.log("[v0] Login successful, redirecting to dashboard")
       router.push("/dashboard")
       router.refresh()
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      console.error("[v0] Login error:", error)
+
+      let errorMessage = "An error occurred during login"
+
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch") || error.message.includes("fetch")) {
+          errorMessage =
+            "Cannot connect to authentication service. Please check your internet connection and try again."
+        } else if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password. Please try again."
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email address before logging in."
+        } else if (error.message.includes("configuration error")) {
+          errorMessage = error.message
+        } else {
+          errorMessage = error.message
+        }
+      }
+
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -79,7 +113,11 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
+                {error && (
+                  <div className="rounded-md bg-red-50 p-3 border border-red-200">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
