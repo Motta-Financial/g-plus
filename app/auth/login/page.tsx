@@ -24,32 +24,36 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Creating Supabase client for login")
       const supabase = createClient()
 
-      console.log("[v0] Attempting login for:", email)
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      console.log("[v0] Login response:", { data, error: loginError })
-
       if (loginError) {
-        console.error("[v0] Login error:", loginError)
         throw loginError
       }
 
-      console.log("[v0] Login successful, redirecting to dashboard")
       router.push("/dashboard")
+      router.refresh()
     } catch (error: unknown) {
-      console.error("[v0] Login catch block:", error)
       if (error instanceof Error) {
-        setError(error.message)
+        if (error.message.includes("configuration error") || error.message.includes("Missing Supabase")) {
+          setError(
+            "Authentication service is not properly configured. Please contact support or check your environment variables.",
+          )
+        } else if (error.message.includes("Invalid login credentials")) {
+          setError("Invalid email or password. Please try again.")
+        } else if (error.message.includes("Email not confirmed")) {
+          setError("Please confirm your email address before logging in.")
+        } else {
+          setError(error.message)
+        }
       } else if (typeof error === "object" && error !== null && "message" in error) {
         setError(String(error.message))
       } else {
-        setError("Failed to connect to authentication service. Please try again.")
+        setError("Cannot connect to authentication service. Please check your internet connection and try again.")
       }
     } finally {
       setIsLoading(false)

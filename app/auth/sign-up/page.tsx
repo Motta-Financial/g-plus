@@ -37,10 +37,8 @@ export default function SignUpPage() {
     }
 
     try {
-      console.log("[v0] Creating Supabase client for sign up")
       const supabase = createClient()
 
-      console.log("[v0] Attempting sign up for:", email)
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -49,17 +47,12 @@ export default function SignUpPage() {
         },
       })
 
-      console.log("[v0] Sign up response:", { data, error: signUpError })
-
       if (signUpError) {
-        console.error("[v0] Sign up error:", signUpError)
         throw signUpError
       }
 
-      console.log("[v0] Sign up successful, redirecting to success page")
       router.push("/auth/sign-up-success")
     } catch (error: unknown) {
-      console.error("[v0] Sign up catch block:", error)
       if (error instanceof Error) {
         setError(error.message)
       } else if (typeof error === "object" && error !== null && "message" in error) {
