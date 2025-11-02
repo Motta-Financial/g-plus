@@ -20,22 +20,37 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("[v0] Creating Supabase client for login")
+      const supabase = createClient()
+
+      console.log("[v0] Attempting login for:", email)
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-        },
       })
-      if (error) throw error
+
+      console.log("[v0] Login response:", { data, error: loginError })
+
+      if (loginError) {
+        console.error("[v0] Login error:", loginError)
+        throw loginError
+      }
+
+      console.log("[v0] Login successful, redirecting to dashboard")
       router.push("/dashboard")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      console.error("[v0] Login catch block:", error)
+      if (error instanceof Error) {
+        setError(error.message)
+      } else if (typeof error === "object" && error !== null && "message" in error) {
+        setError(String(error.message))
+      } else {
+        setError("Failed to connect to authentication service. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }

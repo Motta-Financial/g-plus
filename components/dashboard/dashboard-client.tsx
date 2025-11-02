@@ -26,15 +26,15 @@ export function DashboardClient() {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
 
   const navigationItems = [
-    { label: "Inbox", icon: Inbox, href: "/dashboard/triage", color: "bg-gray-100" },
-    { label: "Finance", icon: FileText, href: "/dashboard/finance", color: "bg-emerald-50" },
-    { label: "Projects", icon: FolderKanban, href: "/dashboard/projects", color: "bg-blue-50" },
-    { label: "Tasks", icon: CheckSquare, href: "/dashboard/todo-list", color: "bg-purple-50" },
-    { label: "Calendar", icon: Calendar, href: "/dashboard/calendar", color: "bg-green-50" },
-    { label: "Classes", icon: BookOpen, href: "/dashboard/classes", color: "bg-orange-50" },
-    { label: "Goals", icon: Target, href: "/dashboard/goals", color: "bg-pink-50" },
-    { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "bg-yellow-50" },
-    { label: "Archives", icon: Archive, href: "/dashboard/archives", color: "bg-gray-50" },
+    { label: "Inbox", icon: Inbox, href: "/dashboard/triage", color: "bg-muted/50" },
+    { label: "Finance", icon: FileText, href: "/dashboard/finance", color: "bg-primary/10" },
+    { label: "Projects", icon: FolderKanban, href: "/dashboard/projects", color: "bg-secondary/10" },
+    { label: "Tasks", icon: CheckSquare, href: "/dashboard/todo-list", color: "bg-accent/20" },
+    { label: "Calendar", icon: Calendar, href: "/dashboard/calendar", color: "bg-primary/15" },
+    { label: "Classes", icon: BookOpen, href: "/dashboard/classes", color: "bg-accent/15" },
+    { label: "Goals", icon: Target, href: "/dashboard/goals", color: "bg-secondary/15" },
+    { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "bg-muted/40" },
+    { label: "Archives", icon: Archive, href: "/dashboard/archives", color: "bg-muted/30" },
   ]
 
   const quickActions = [
@@ -49,18 +49,18 @@ export function DashboardClient() {
       <div className="max-w-5xl mx-auto space-y-8 py-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="h-16 w-16 rounded-2xl bg-gray-200 flex items-center justify-center">
+            <div className="h-16 w-16 rounded-lg bg-accent/30 flex items-center justify-center border-2 border-border shadow-sm">
               <div className="text-2xl">🧠</div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Grace Plus</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">Grace Plus</h1>
         </div>
 
         <DatabaseStatus />
 
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-foreground" />
+            <div className="h-2 w-2 rounded-full bg-primary" />
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Navigation</h2>
           </div>
 
@@ -69,12 +69,14 @@ export function DashboardClient() {
               const Icon = item.icon
               return (
                 <Link key={item.label} href={item.href}>
-                  <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-gray-300 group">
+                  <Card className="luxury-card p-6 cursor-pointer group">
                     <div className="flex flex-col items-start gap-3">
-                      <div className={`p-3 rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
-                        <Icon className="h-6 w-6 text-gray-700" />
+                      <div
+                        className={`p-3 rounded-lg ${item.color} group-hover:scale-105 transition-transform border border-border/50`}
+                      >
+                        <Icon className="h-6 w-6 text-foreground" />
                       </div>
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <span className="text-sm font-semibold text-foreground">{item.label}</span>
                     </div>
                   </Card>
                 </Link>
@@ -82,7 +84,10 @@ export function DashboardClient() {
             })}
           </div>
 
-          <Button variant="ghost" className="w-full justify-center gap-2 text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            className="w-full justify-center gap-2 text-muted-foreground hover:text-primary hover:bg-accent/20"
+          >
             <Plus className="h-4 w-4" />
             New
           </Button>
@@ -99,10 +104,10 @@ export function DashboardClient() {
                   key={action.label}
                   variant="outline"
                   onClick={action.action}
-                  className="h-auto py-4 px-4 justify-start gap-3 hover:bg-accent bg-transparent"
+                  className="h-auto py-4 px-4 justify-start gap-3 hover:bg-accent/20 hover:border-primary bg-card border-2"
                 >
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">{action.label}</span>
+                  <Icon className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">{action.label}</span>
                 </Button>
               )
             })}
