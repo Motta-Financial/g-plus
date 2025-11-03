@@ -24,6 +24,9 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
+    console.log("[v0] Sign up attempt started")
+    console.log("[v0] Email:", email)
+
     if (password !== repeatPassword) {
       setError("Passwords do not match")
       setIsLoading(false)
@@ -37,7 +40,9 @@ export default function SignUpPage() {
     }
 
     try {
+      console.log("[v0] Creating Supabase client...")
       const supabase = createClient()
+      console.log("[v0] Supabase client created, calling signUp...")
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -47,18 +52,25 @@ export default function SignUpPage() {
         },
       })
 
+      console.log("[v0] Sign up response:", { data, error: signUpError })
+
       if (signUpError) {
+        console.error("[v0] Sign up error:", signUpError)
         throw signUpError
       }
 
+      console.log("[v0] Sign up successful, redirecting...")
       router.push("/auth/sign-up-success")
     } catch (error: unknown) {
+      console.error("[v0] Sign up failed:", error)
       if (error instanceof Error) {
+        console.error("[v0] Error message:", error.message)
+        console.error("[v0] Error stack:", error.stack)
         setError(error.message)
       } else if (typeof error === "object" && error !== null && "message" in error) {
         setError(String(error.message))
       } else {
-        setError("Failed to connect to authentication service. Please try again.")
+        setError("Failed to fetch")
       }
     } finally {
       setIsLoading(false)
