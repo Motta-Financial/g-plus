@@ -1,7 +1,10 @@
-import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function updateSession(request: NextRequest) {
+  // To re-enable authentication, uncomment the code below and remove the early return
+  return NextResponse.next({ request })
+
+  /* AUTHENTICATION CODE - COMMENTED OUT FOR TESTING
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -63,4 +66,5 @@ export async function updateSession(request: NextRequest) {
   // of sync and terminate the user's session prematurely!
 
   return supabaseResponse
+  */
 }

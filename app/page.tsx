@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+// import { createClient } from "@/lib/supabase/server" // Commented out for testing
 
 export default async function HomePage() {
+  // To re-enable, uncomment the code below and remove the direct redirect
+  redirect("/dashboard")
+
+  /* AUTHENTICATION CODE - COMMENTED OUT FOR TESTING
   const supabase = await createClient()
   const {
     data: { user },
@@ -12,4 +16,5 @@ export default async function HomePage() {
   }
 
   redirect("/dashboard")
+  */
 }
