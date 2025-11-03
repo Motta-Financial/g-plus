@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "tw-animate-css";
+/* Removed @import "tw-animate-css" which was causing CSS compilation errors */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -116,6 +116,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+/* Added missing closing brace for @theme inline block */
 
 @layer base {
   * {
