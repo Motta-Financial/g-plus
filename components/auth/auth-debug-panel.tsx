@@ -14,7 +14,7 @@ export function AuthDebugPanel() {
   const [loading, setLoading] = useState(true)
   const [envVars, setEnvVars] = useState({
     supabaseUrl: false,
-    supabaseAnonKey: false,
+    supabaseKey: false,
     devRedirectUrl: false,
   })
 
@@ -48,7 +48,7 @@ export function AuthDebugPanel() {
   function checkEnvVars() {
     setEnvVars({
       supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       devRedirectUrl: !!process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL,
     })
   }
@@ -90,9 +90,9 @@ export function AuthDebugPanel() {
             <div className="flex items-center justify-between text-sm">
               <span>NEXT_PUBLIC_SUPABASE_ANON_KEY</span>
               <div className="flex items-center gap-2">
-                <StatusIcon status={envVars.supabaseAnonKey} />
-                <Badge variant={envVars.supabaseAnonKey ? "default" : "destructive"}>
-                  {envVars.supabaseAnonKey ? "Set" : "Missing"}
+                <StatusIcon status={envVars.supabaseKey} />
+                <Badge variant={envVars.supabaseKey ? "default" : "destructive"}>
+                  {envVars.supabaseKey ? "Set" : "Missing"}
                 </Badge>
               </div>
             </div>
