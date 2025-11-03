@@ -25,6 +25,11 @@ import {
   deleteTask as deleteTaskDb,
   addTaskComment as addTaskCommentDb,
 } from "./actions/tasks"
+import {
+  createAccount as createAccountDb,
+  updateAccount as updateAccountDb,
+  deleteAccount as deleteAccountDb,
+} from "./actions/accounts"
 
 interface AppState {
   workstreams: Workstream[]
@@ -100,9 +105,9 @@ interface AppState {
   addSavingsGoal: (goal: Omit<SavingsGoal, "id" | "created_at" | "updated_at">) => void
   updateSavingsGoal: (id: string, updates: Partial<SavingsGoal>) => void
   deleteSavingsGoal: (id: string) => void
-  addAccount: (account: Omit<Account, "id" | "created_at" | "updated_at">) => void
-  updateAccount: (id: string, updates: Partial<Account>) => void
-  deleteAccount: (id: string) => void
+  addAccount: (account: Omit<Account, "id" | "created_at" | "updated_at">) => Promise<void>
+  updateAccount: (id: string, updates: Partial<Account>) => Promise<void>
+  deleteAccount: (id: string) => Promise<void>
   addSubscription: (subscription: Omit<Subscription, "id" | "created_at" | "updated_at">) => void
   updateSubscription: (id: string, updates: Partial<Subscription>) => void
   deleteSubscription: (id: string) => void
@@ -1194,28 +1199,53 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           savingsGoals: state.savingsGoals.filter((g) => g.id !== id),
         })),
-      addAccount: (account) =>
+      addAccount: async (account) => {
+        const newAccount = {
+          ...account,
+          id: Math.random().toString(36).substr(2, 9),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
         set((state) => ({
-          accounts: [
-            ...state.accounts,
-            {
-              ...account,
-              id: Math.random().toString(36).substr(2, 9),
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ],
-        })),
-      updateAccount: (id, updates) =>
+          accounts: [...state.accounts, newAccount],
+        }))
+
+        try {
+          const dbAccount = await createAccountDb(account)
+          if (dbAccount) {
+            set((state) => ({
+              accounts: state.accounts.map((a) => (a.id === newAccount.id ? { ...a, id: dbAccount.id } : a)),
+            }))
+          }
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
+      updateAccount: async (id, updates) => {
         set((state) => ({
           accounts: state.accounts.map((a) =>
             a.id === id ? { ...a, ...updates, updated_at: new Date().toISOString() } : a,
           ),
-        })),
-      deleteAccount: (id) =>
+        }))
+
+        try {
+          await updateAccountDb(id, updates)
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
+      deleteAccount: async (id) => {
         set((state) => ({
           accounts: state.accounts.filter((a) => a.id !== id),
-        })),
+        }))
+
+        try {
+          await deleteAccountDb(id)
+        } catch (error) {
+          console.log("[v0] Database not set up yet, using localStorage only")
+        }
+      },
       addSubscription: (subscription) =>
         set((state) => ({
           subscriptions: [
