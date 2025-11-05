@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-// import { createClient } from "@/lib/supabase/server" // Commented out for testing
+// import { createClient } from "@/utils/supabase/server" // Commented out for testing
 
 export default async function HomePage() {
   // To re-enable, uncomment the code below and remove the direct redirect

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+import { createAdminClient } from "@/utils/supabase/admin"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
