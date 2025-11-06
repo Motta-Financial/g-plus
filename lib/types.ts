@@ -106,6 +106,42 @@ export interface TaskComment {
   updated_at: string
 }
 
+export interface TaskAttachment {
+  id: string
+  user_id: string
+  task_id: string
+  file_name: string
+  file_path: string
+  file_size: number
+  mime_type: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CanvasAssignmentAttachment {
+  id: string
+  user_id: string
+  canvas_assignment_id: string
+  file_name: string
+  file_path: string
+  file_size: number
+  mime_type: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FinanceTransactionAttachment {
+  id: string
+  user_id: string
+  transaction_id: string
+  file_name: string
+  file_path: string
+  file_size: number
+  mime_type: string
+  created_at: string
+  updated_at: string
+}
+
 export interface CalendarEvent {
   id: string
   user_id: string
